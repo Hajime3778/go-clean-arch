@@ -50,5 +50,9 @@ func (tu *taskUsecase) Update(ctx context.Context, task domain.Task) error {
 
 // Delete IDでタスクを1件削除します
 func (tu *taskUsecase) Delete(ctx context.Context, id int64) error {
-	panic("not implemented") // TODO: Implement
+	err := tu.repo.Delete(ctx, id)
+	if err != nil {
+		return err
+	}
+	return nil
 }

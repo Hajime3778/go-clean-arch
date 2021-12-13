@@ -80,5 +80,13 @@ func (tr *taskRepository) Update(ctx context.Context, task domain.Task) error {
 
 // Delete IDでタスクを1件削除します
 func (tr *taskRepository) Delete(ctx context.Context, id int64) error {
-	panic("not implemented") // TODO: Implement
+	query := `
+		DELETE FROM tasks where id = ? 
+	`
+	_, err := tr.SqlDriver.Execute(query, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

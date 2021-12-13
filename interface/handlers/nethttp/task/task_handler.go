@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -42,15 +41,16 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println(err)
 		}
-	case http.MethodPost:
-		fmt.Println("create tasks")
 	case http.MethodPut:
 		err := t.update(ctx, w, r, taskID)
 		if err != nil {
 			log.Println(err)
 		}
 	case http.MethodDelete:
-		fmt.Println("delete tasks")
+		err := t.delete(ctx, w, taskID)
+		if err != nil {
+			log.Println(err)
+		}
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -96,6 +96,15 @@ func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http
 	err = t.taskUsecase.Update(ctx, task)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+// delete IDでタスクを1件削除します
+func (t *taskHandler) delete(ctx context.Context, w http.ResponseWriter, id int64) error {
+	err := t.taskUsecase.Delete(ctx, id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 	return nil
 }
