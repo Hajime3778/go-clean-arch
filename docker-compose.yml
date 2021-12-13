@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  mysql: # Mysql container
+    container_name: mysql
+    platform: linux/x86_64 # M1チップ対応 (intel版の方はコメントアウトして実行してください)
+    image: mysql:5.7
+    restart: always
+    volumes:
+      - ./docker/my.cnf:/etc/mysql/my.cnf
+      - ./docker/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootPassword
+      MYSQL_DATABASE: go_clean_arch
+      MYSQL_USER:     user
+      MYSQL_PASSWORD: password
+      TZ: Asia/Tokyo
+    ports:
+      - 3306:3306

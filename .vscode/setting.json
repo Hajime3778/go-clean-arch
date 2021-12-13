@@ -1,0 +1,10 @@
+{
+  "editor.tabSize": 2,
+  "go.formatTool": "gofmt",
+  "go.lintTool": "golangci-lint",
+  "[go]": {
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": false
+  }
+}
