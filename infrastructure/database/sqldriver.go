@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 
@@ -61,7 +62,13 @@ func (driver *SqlDriver) QueryRow(statement string, args ...interface{}) databas
 func (driver *SqlDriver) Execute(statement string, args ...interface{}) (database.Result, error) {
 	res := SqlResult{}
 	stmt, err := driver.Conn.Prepare(statement)
-	defer stmt.Close()
+	defer func() {
+		err := stmt.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
 	if err != nil {
 		return res, err
 	}
