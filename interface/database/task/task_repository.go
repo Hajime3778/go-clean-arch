@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"log"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
 	"github.com/Hajime3778/go-clean-arch/interface/database"
@@ -22,7 +23,7 @@ func (tr *taskRepository) Fetch(ctx context.Context, cursor string, num int64) (
 }
 
 // FetchByID IDでタスクを1件取得します
-func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (domain.Task, error) {
+func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (task domain.Task, err error) {
 	query := `
 		SELECT 
 			* 
@@ -33,10 +34,23 @@ func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (domain.Task,
 		ORDER BY id 
 		LIMIT 1
 	`
-	row := tr.SqlDriver.QueryRow(query, id)
+	rows, err := tr.SqlDriver.Query(query, id)
+	if err != nil {
+		return domain.Task{}, err
+	}
 
-	task := domain.Task{}
-	err := row.Scan(
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}()
+
+	if !rows.Next() {
+		return domain.Task{}, tr.SqlDriver.ErrNoRows()
+	}
+
+	err = rows.Scan(
 		&task.ID,
 		&task.Title,
 		&task.Content,

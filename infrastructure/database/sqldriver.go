@@ -16,10 +16,6 @@ type SqlDriver struct {
 	Conn *sql.DB
 }
 
-type Row struct {
-	Row *sql.Row
-}
-
 type Rows struct {
 	Rows *sql.Rows
 }
@@ -53,11 +49,6 @@ func (driver *SqlDriver) Query(statement string, args ...interface{}) (database.
 	return Rows{rows}, nil
 }
 
-// QueryRow: 一件取得のクエリを実行します
-func (driver *SqlDriver) QueryRow(statement string, args ...interface{}) database.Row {
-	return Row{driver.Conn.QueryRow(statement, args...)}
-}
-
 // Execute: クエリを実行します
 func (driver *SqlDriver) Execute(statement string, args ...interface{}) (database.Result, error) {
 	res := SqlResult{}
@@ -65,7 +56,7 @@ func (driver *SqlDriver) Execute(statement string, args ...interface{}) (databas
 	defer func() {
 		err := stmt.Close()
 		if err != nil {
-			log.Println(err)
+			log.Println(err.Error())
 		}
 	}()
 
@@ -83,11 +74,6 @@ func (driver *SqlDriver) Execute(statement string, args ...interface{}) (databas
 // ErrNoRows: データが見つからなかったときのエラー
 func (driver *SqlDriver) ErrNoRows() error {
 	return sql.ErrNoRows
-}
-
-// Scan: マッピングを行います
-func (r Row) Scan(dest ...interface{}) error {
-	return r.Row.Scan(dest...)
 }
 
 // Scan: マッピングを行います

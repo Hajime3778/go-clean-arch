@@ -31,7 +31,7 @@ func (t *taskIndexHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		err := t.create(ctx, w, r)
 		if err != nil {
-			log.Println(err)
+			log.Println(err.Error())
 		}
 	default:
 		w.WriteHeader(404)

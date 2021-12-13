@@ -30,8 +30,9 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	param := strings.TrimPrefix(r.URL.Path, TaskPath)
 	taskID, err := strconv.ParseInt(param, 10, 64)
 	if err != nil {
-		log.Println(err)
+		log.Println(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -39,17 +40,20 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		err := t.fetchByID(ctx, w, taskID)
 		if err != nil {
-			log.Println(err)
+			w.Write([]byte(err.Error()))
+			log.Println(err.Error())
 		}
 	case http.MethodPut:
 		err := t.update(ctx, w, r, taskID)
 		if err != nil {
-			log.Println(err)
+			w.Write([]byte(err.Error()))
+			log.Println(err.Error())
 		}
 	case http.MethodDelete:
 		err := t.delete(ctx, w, taskID)
 		if err != nil {
-			log.Println(err)
+			w.Write([]byte(err.Error()))
+			log.Println(err.Error())
 		}
 	default:
 		w.WriteHeader(http.StatusNotFound)
@@ -61,20 +65,22 @@ func (t *taskHandler) fetchByID(ctx context.Context, w http.ResponseWriter, id i
 	task, err := t.taskUsecase.FetchByID(ctx, id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		return err
 	}
 
 	output, err := json.Marshal(task)
 	if err != nil {
-		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
 		return err
 	}
 
 	_, err = w.Write(output)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		return err
 	}
 
-	log.Println(output)
+	log.Println(string(output))
 	return nil
 }
 
