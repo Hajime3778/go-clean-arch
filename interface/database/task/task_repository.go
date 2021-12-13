@@ -57,7 +57,6 @@ func (tr *taskRepository) Create(ctx context.Context, task domain.Task) error {
 	query := `
 		INSERT INTO tasks(title,content,due_date) VALUES(?,?,?)
 	`
-
 	_, err := tr.SqlDriver.Execute(query, task.Title, task.Content, task.DueDate)
 	if err != nil {
 		return err
@@ -68,7 +67,15 @@ func (tr *taskRepository) Create(ctx context.Context, task domain.Task) error {
 
 // Update IDでタスクを1件更新します
 func (tr *taskRepository) Update(ctx context.Context, task domain.Task) error {
-	panic("not implemented") // TODO: Implement
+	query := `
+		UPDATE tasks SET title = ?, content = ?, due_date = ? where id = ? 
+	`
+	_, err := tr.SqlDriver.Execute(query, task.Title, task.Content, task.DueDate, task.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Delete IDでタスクを1件削除します

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Hajime3778/go-clean-arch/domain"
 	_usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
 )
 
@@ -44,7 +45,10 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		fmt.Println("create tasks")
 	case http.MethodPut:
-		fmt.Println("update tasks")
+		err := t.update(ctx, w, r, taskID)
+		if err != nil {
+			log.Println(err)
+		}
 	case http.MethodDelete:
 		fmt.Println("delete tasks")
 	default:
@@ -71,5 +75,27 @@ func (t *taskHandler) fetchByID(ctx context.Context, w http.ResponseWriter, id i
 	}
 
 	log.Println(output)
+	return nil
+}
+
+// update IDでタスクを1件更新します
+func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http.Request, id int64) error {
+	var requestTask UpdateTaskRequest
+	err := json.NewDecoder(r.Body).Decode(&requestTask)
+	if err != nil {
+		return err
+	}
+
+	task := domain.Task{
+		ID:      id,
+		Title:   requestTask.Title,
+		Content: requestTask.Content,
+		DueDate: requestTask.DueDate,
+	}
+
+	err = t.taskUsecase.Update(ctx, task)
+	if err != nil {
+		return err
+	}
 	return nil
 }
