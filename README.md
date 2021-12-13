@@ -2,7 +2,7 @@
 
 ## 初期設定
 ```
-. script/setup.sh
+. scripts/setup.sh
 ```
 ## ローカル環境起動
 
