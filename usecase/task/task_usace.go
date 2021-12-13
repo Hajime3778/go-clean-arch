@@ -31,7 +31,7 @@ func (tu *taskUsecase) FetchByID(ctx context.Context, id int64) (domain.Task, er
 }
 
 // Create タスクを1件作成します
-func (tu *taskUsecase) Create(ctx context.Context, task *domain.Task) error {
+func (tu *taskUsecase) Create(ctx context.Context, task domain.Task) error {
 	err := tu.repo.Create(ctx, task)
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func (tu *taskUsecase) Create(ctx context.Context, task *domain.Task) error {
 }
 
 // Update IDでタスクを1件更新します
-func (tu *taskUsecase) Update(ctx context.Context, task *domain.Task) error {
+func (tu *taskUsecase) Update(ctx context.Context, task domain.Task) error {
 	panic("not implemented") // TODO: Implement
 }
 

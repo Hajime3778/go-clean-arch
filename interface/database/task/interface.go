@@ -10,7 +10,7 @@ import (
 type TaskRepository interface {
 	Fetch(ctx context.Context, cursor string, num int64) (res []domain.Task, nextCursor string, err error)
 	FetchByID(ctx context.Context, id int64) (domain.Task, error)
-	Create(ctx context.Context, task *domain.Task) error
-	Update(ctx context.Context, task *domain.Task) error
+	Create(ctx context.Context, task domain.Task) error
+	Update(ctx context.Context, task domain.Task) error
 	Delete(ctx context.Context, id int64) error
 }

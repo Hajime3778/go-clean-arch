@@ -51,7 +51,7 @@ func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r 
 		DueDate: requestTask.DueDate,
 	}
 
-	err = t.taskUsecase.Create(ctx, &task)
+	err = t.taskUsecase.Create(ctx, task)
 	if err != nil {
 		return err
 	}

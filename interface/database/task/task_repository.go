@@ -53,7 +53,7 @@ func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (domain.Task,
 }
 
 // Create タスクを1件作成します
-func (tr *taskRepository) Create(ctx context.Context, task *domain.Task) error {
+func (tr *taskRepository) Create(ctx context.Context, task domain.Task) error {
 	query := `
 		INSERT INTO tasks(title,content,due_date) VALUES(?,?,?)
 	`
@@ -67,7 +67,7 @@ func (tr *taskRepository) Create(ctx context.Context, task *domain.Task) error {
 }
 
 // Update IDでタスクを1件更新します
-func (tr *taskRepository) Update(ctx context.Context, task *domain.Task) error {
+func (tr *taskRepository) Update(ctx context.Context, task domain.Task) error {
 	panic("not implemented") // TODO: Implement
 }
 

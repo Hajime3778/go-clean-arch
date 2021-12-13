@@ -2,7 +2,7 @@ package task
 
 import "time"
 
-// Task ...
+// CreateTaskRequest: タスク追加時のリクエスト
 type CreateTaskRequest struct {
 	Title   string    `json:"title"`
 	Content string    `json:"content"`
