@@ -89,6 +89,7 @@ func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http
 	var requestTask UpdateTaskRequest
 	err := json.NewDecoder(r.Body).Decode(&requestTask)
 	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		return err
 	}
 
@@ -101,6 +102,7 @@ func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http
 
 	err = t.taskUsecase.Update(ctx, task)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		return err
 	}
 	return nil
@@ -112,5 +114,6 @@ func (t *taskHandler) delete(ctx context.Context, w http.ResponseWriter, id int6
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+	w.WriteHeader(http.StatusNoContent)
 	return nil
 }

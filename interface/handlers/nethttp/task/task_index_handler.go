@@ -55,5 +55,8 @@ func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r 
 	if err != nil {
 		return err
 	}
+
+	w.WriteHeader(http.StatusCreated)
+
 	return nil
 }

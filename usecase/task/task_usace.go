@@ -41,7 +41,13 @@ func (tu *taskUsecase) Create(ctx context.Context, task domain.Task) error {
 
 // Update IDでタスクを1件更新します
 func (tu *taskUsecase) Update(ctx context.Context, task domain.Task) error {
-	err := tu.repo.Update(ctx, task)
+	// 取得できなかった場合、ErNoRowsエラーが返却される
+	_, err := tu.repo.FetchByID(ctx, task.ID)
+	if err != nil {
+		return err
+	}
+
+	err = tu.repo.Update(ctx, task)
 	if err != nil {
 		return err
 	}
