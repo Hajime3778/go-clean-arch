@@ -4,21 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
-	_usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
+	usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
 )
 
 const TaskIndexPath string = "/tasks"
 
 type taskIndexHandler struct {
-	taskUsecase _usecase.TaskUsecase
+	taskUsecase usecase.TaskUsecase
 }
 
 // NewTaskHandler タスク機能のHandlerオブジェクトを作成します
-func NewTaskIndexHandler(u _usecase.TaskUsecase) *taskIndexHandler {
+func NewTaskIndexHandler(u usecase.TaskUsecase) *taskIndexHandler {
 	return &taskIndexHandler{u}
 }
 
@@ -29,23 +28,30 @@ func (t *taskIndexHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		fmt.Println("fetch all tasks")
 	case http.MethodPost:
-		err := t.create(ctx, w, r)
-		if err != nil {
-			log.Println(err.Error())
-		}
+		t.create(ctx, w, r)
 	default:
-		w.WriteHeader(404)
+		w.WriteHeader(http.StatusNotFound)
 	}
 }
 
-func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var requestTask CreateTaskRequest
-	err := json.NewDecoder(r.Body).Decode(&requestTask)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&requestTask)
 	if err != nil {
-		return err
+		writeJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	var ok bool
+	if ok, err = requestTask.IsCreateRequestValid(); !ok {
+		writeJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		return
 	}
 
 	task := domain.Task{
+		UserID:  1, // TODO: トークンから取得するようにする
 		Title:   requestTask.Title,
 		Content: requestTask.Content,
 		DueDate: requestTask.DueDate,
@@ -53,10 +59,9 @@ func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r 
 
 	err = t.taskUsecase.Create(ctx, task)
 	if err != nil {
-		return err
+		writeJSONResponse(w, getStatusCode(err), domain.ErrorResponse{Message: err.Error()})
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-
-	return nil
 }

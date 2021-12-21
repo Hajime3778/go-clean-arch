@@ -9,17 +9,17 @@ import (
 	"strings"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
-	_usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
+	usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
 )
 
 const TaskPath string = "/tasks/"
 
 type taskHandler struct {
-	taskUsecase _usecase.TaskUsecase
+	taskUsecase usecase.TaskUsecase
 }
 
 // NewTaskHandler タスク機能のHandlerオブジェクトを作成します
-func NewTaskHandler(u _usecase.TaskUsecase) *taskHandler {
+func NewTaskHandler(u usecase.TaskUsecase) *taskHandler {
 	return &taskHandler{u}
 }
 
@@ -30,67 +30,55 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	param := strings.TrimPrefix(r.URL.Path, TaskPath)
 	taskID, err := strconv.ParseInt(param, 10, 64)
 	if err != nil {
-		log.Println(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
+		log.Println(err.Error())
 		return
 	}
 
 	switch r.Method {
 	case http.MethodGet:
-		err := t.fetchByID(ctx, w, taskID)
-		if err != nil {
-			w.Write([]byte(err.Error()))
-			log.Println(err.Error())
-		}
+		t.fetchByID(ctx, w, taskID)
 	case http.MethodPut:
-		err := t.update(ctx, w, r, taskID)
-		if err != nil {
-			w.Write([]byte(err.Error()))
-			log.Println(err.Error())
-		}
+		t.update(ctx, w, r, taskID)
 	case http.MethodDelete:
-		err := t.delete(ctx, w, taskID)
-		if err != nil {
-			w.Write([]byte(err.Error()))
-			log.Println(err.Error())
-		}
+		t.delete(ctx, w, taskID)
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}
 }
 
 // fetchByID IDでタスクを1件取得します
-func (t *taskHandler) fetchByID(ctx context.Context, w http.ResponseWriter, id int64) error {
+func (t *taskHandler) fetchByID(ctx context.Context, w http.ResponseWriter, id int64) {
 	task, err := t.taskUsecase.FetchByID(ctx, id)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return err
+		writeJSONResponse(w, getStatusCode(err), domain.ErrorResponse{Message: err.Error()})
+		return
 	}
 
 	output, err := json.Marshal(task)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return err
+		writeJSONResponse(w, http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()})
+		return
 	}
-
-	_, err = w.Write(output)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return err
-	}
-
-	log.Println(string(output))
-	return nil
+	writeJSONResponse(w, http.StatusOK, string(output))
 }
 
 // update IDでタスクを1件更新します
-func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http.Request, id int64) error {
+func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http.Request, id int64) {
 	var requestTask UpdateTaskRequest
-	err := json.NewDecoder(r.Body).Decode(&requestTask)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&requestTask)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return err
+		writeJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	var ok bool
+	if ok, err = requestTask.IsUpdateRequestValid(); !ok {
+		writeJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		return
 	}
 
 	task := domain.Task{
@@ -102,18 +90,18 @@ func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http
 
 	err = t.taskUsecase.Update(ctx, task)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return err
+		writeJSONResponse(w, getStatusCode(err), domain.ErrorResponse{Message: err.Error()})
+		return
 	}
-	return nil
+	w.WriteHeader(http.StatusOK)
 }
 
 // delete IDでタスクを1件削除します
-func (t *taskHandler) delete(ctx context.Context, w http.ResponseWriter, id int64) error {
+func (t *taskHandler) delete(ctx context.Context, w http.ResponseWriter, id int64) {
 	err := t.taskUsecase.Delete(ctx, id)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		writeJSONResponse(w, getStatusCode(err), domain.ErrorResponse{Message: err.Error()})
+		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-	return nil
 }

@@ -4,15 +4,15 @@ import (
 	"context"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
-	_repository "github.com/Hajime3778/go-clean-arch/interface/database/task"
+	repository "github.com/Hajime3778/go-clean-arch/interface/database/task"
 )
 
 type taskUsecase struct {
-	repo _repository.TaskRepository
+	repo repository.TaskRepository
 }
 
 // NewTaskUsecase タスク機能のUsecaseオブジェクトを作成します
-func NewTaskUsecase(repo _repository.TaskRepository) TaskUsecase {
+func NewTaskUsecase(repo repository.TaskRepository) TaskUsecase {
 	return &taskUsecase{repo}
 }
 
@@ -41,7 +41,6 @@ func (tu *taskUsecase) Create(ctx context.Context, task domain.Task) error {
 
 // Update IDでタスクを1件更新します
 func (tu *taskUsecase) Update(ctx context.Context, task domain.Task) error {
-	// 取得できなかった場合、ErNoRowsエラーが返却される
 	_, err := tu.repo.FetchByID(ctx, task.ID)
 	if err != nil {
 		return err

@@ -1,17 +1,40 @@
 package task
 
-import "time"
+import (
+	"time"
+
+	validator "gopkg.in/go-playground/validator.v9"
+)
 
 // CreateTaskRequest: タスク追加時のリクエスト
 type CreateTaskRequest struct {
-	Title   string    `json:"title"`
-	Content string    `json:"content"`
-	DueDate time.Time `json:"due_date"`
+	Title   string    `json:"title" validate:"required"`
+	Content string    `json:"content" validate:"required"`
+	DueDate time.Time `json:"due_date" validate:"required"`
+}
+
+// IsCreateRequestValid:
+func (r CreateTaskRequest) IsCreateRequestValid() (bool, error) {
+	validate := validator.New()
+	err := validate.Struct(r)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // UpdateTaskRequest: タスク更新時のリクエスト
 type UpdateTaskRequest struct {
-	Title   string    `json:"title"`
-	Content string    `json:"content"`
-	DueDate time.Time `json:"due_date"`
+	Title   string    `json:"title" validate:"required"`
+	Content string    `json:"content" validate:"required"`
+	DueDate time.Time `json:"due_date" validate:"required"`
+}
+
+func (r UpdateTaskRequest) IsUpdateRequestValid() (bool, error) {
+	validate := validator.New()
+	err := validate.Struct(r)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }

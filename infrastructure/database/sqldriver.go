@@ -1,9 +1,9 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 
@@ -41,8 +41,8 @@ func NewSqlConnenction() database.SqlDriver {
 }
 
 // Query: 取得のクエリを実行します
-func (driver *SqlDriver) Query(statement string, args ...interface{}) (database.Rows, error) {
-	rows, err := driver.Conn.Query(statement, args...)
+func (driver *SqlDriver) QueryContext(ctx context.Context, query string, args ...interface{}) (database.Rows, error) {
+	rows, err := driver.Conn.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -50,20 +50,13 @@ func (driver *SqlDriver) Query(statement string, args ...interface{}) (database.
 }
 
 // Execute: クエリを実行します
-func (driver *SqlDriver) Execute(statement string, args ...interface{}) (database.Result, error) {
+func (driver *SqlDriver) ExecuteContext(ctx context.Context, query string, args ...interface{}) (database.Result, error) {
 	res := SqlResult{}
-	stmt, err := driver.Conn.Prepare(statement)
-	defer func() {
-		err := stmt.Close()
-		if err != nil {
-			log.Println(err.Error())
-		}
-	}()
-
+	stmt, err := driver.Conn.PrepareContext(ctx, query)
 	if err != nil {
 		return res, err
 	}
-	result, err := stmt.Exec(args...)
+	result, err := stmt.ExecContext(ctx, args...)
 	if err != nil {
 		return res, err
 	}

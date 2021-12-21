@@ -34,7 +34,7 @@ func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (task domain.
 		ORDER BY id 
 		LIMIT 1
 	`
-	rows, err := tr.SqlDriver.Query(query, id)
+	rows, err := tr.SqlDriver.QueryContext(ctx, query, id)
 	if err != nil {
 		return domain.Task{}, err
 	}
@@ -47,11 +47,12 @@ func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (task domain.
 	}()
 
 	if !rows.Next() {
-		return domain.Task{}, tr.SqlDriver.ErrNoRows()
+		return domain.Task{}, domain.ErrRecordNotFound
 	}
 
 	err = rows.Scan(
 		&task.ID,
+		&task.UserID,
 		&task.Title,
 		&task.Content,
 		&task.DueDate,
@@ -69,9 +70,9 @@ func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (task domain.
 // Create タスクを1件作成します
 func (tr *taskRepository) Create(ctx context.Context, task domain.Task) error {
 	query := `
-		INSERT INTO tasks(title,content,due_date) VALUES(?,?,?)
+		INSERT INTO tasks(user_id,title,content,due_date) VALUES(?,?,?,?)
 	`
-	_, err := tr.SqlDriver.Execute(query, task.Title, task.Content, task.DueDate)
+	_, err := tr.SqlDriver.ExecuteContext(ctx, query, task.UserID, task.Title, task.Content, task.DueDate)
 	if err != nil {
 		return err
 	}
@@ -84,7 +85,7 @@ func (tr *taskRepository) Update(ctx context.Context, task domain.Task) error {
 	query := `
 		UPDATE tasks SET title = ?, content = ?, due_date = ? where id = ? 
 	`
-	_, err := tr.SqlDriver.Execute(query, task.Title, task.Content, task.DueDate, task.ID)
+	_, err := tr.SqlDriver.ExecuteContext(ctx, query, task.Title, task.Content, task.DueDate, task.ID)
 	if err != nil {
 		return err
 	}
@@ -97,7 +98,7 @@ func (tr *taskRepository) Delete(ctx context.Context, id int64) error {
 	query := `
 		DELETE FROM tasks where id = ? 
 	`
-	_, err := tr.SqlDriver.Execute(query, id)
+	_, err := tr.SqlDriver.ExecuteContext(ctx, query, id)
 	if err != nil {
 		return err
 	}

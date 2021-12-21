@@ -1,8 +1,10 @@
 package database
 
+import "context"
+
 type SqlDriver interface {
-	Query(string, ...interface{}) (Rows, error)
-	Execute(string, ...interface{}) (Result, error)
+	QueryContext(context.Context, string, ...interface{}) (Rows, error)
+	ExecuteContext(context.Context, string, ...interface{}) (Result, error)
 	ErrNoRows() error
 }
 
