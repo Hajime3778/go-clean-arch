@@ -7,8 +7,8 @@ services:
     image: mysql:5.7
     restart: always
     volumes:
-      - ./docker/my.cnf:/etc/mysql/my.cnf
-      - ./docker/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+      - ./docker/mysql/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       MYSQL_ROOT_PASSWORD: rootPassword
       MYSQL_DATABASE: go_clean_arch
