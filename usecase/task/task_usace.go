@@ -16,8 +16,8 @@ func NewTaskUsecase(repo repository.TaskRepository) TaskUsecase {
 	return &taskUsecase{repo}
 }
 
-// NewTaskUsecase タスクを指定した範囲まで取得します
-func (tu *taskUsecase) Fetch(ctx context.Context, cursor string, num int64) ([]domain.Task, string, error) {
+// FindByUserID タスクをユーザーIDで複数件取得します
+func (tu *taskUsecase) FindByUserID(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
 	panic("not implemented") // TODO: Implement
 }
 

@@ -54,8 +54,61 @@ func TestGetByID(t *testing.T) {
 		mock.ExpectQuery(regexp.QuoteMeta(query)).WithArgs(int64(2)).WillReturnRows(rows)
 
 		got, err := repo.GetByID(context.TODO(), int64(2))
-		assert.NoError(t, err)
 		assert.Equal(t, domain.ErrRecordNotFound, err)
 		assert.Equal(t, domain.Task{}, got)
+	})
+}
+
+func TestCreate(t *testing.T) {
+	// db, mock, err := sqlmock.New()
+	// if err != nil {
+	// 	t.Fatalf("sqlmock error: '%s'", err)
+	// }
+
+	// sqlDriver := new(infrastructure.SqlDriver)
+	// sqlDriver.Conn = db
+
+	// repo := taskRepository.NewTaskRepository(sqlDriver)
+
+	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
+	})
+
+	t.Run("準正常系 存在しないIDで検索してエラーとなること", func(t *testing.T) {
+	})
+}
+
+func TestUpdate(t *testing.T) {
+	// db, mock, err := sqlmock.New()
+	// if err != nil {
+	// 	t.Fatalf("sqlmock error: '%s'", err)
+	// }
+
+	// sqlDriver := new(infrastructure.SqlDriver)
+	// sqlDriver.Conn = db
+
+	// repo := taskRepository.NewTaskRepository(sqlDriver)
+
+	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
+	})
+
+	t.Run("準正常系 存在しないIDで検索してエラーとなること", func(t *testing.T) {
+	})
+}
+
+func TestDelete(t *testing.T) {
+	// db, mock, err := sqlmock.New()
+	// if err != nil {
+	// 	t.Fatalf("sqlmock error: '%s'", err)
+	// }
+
+	// sqlDriver := new(infrastructure.SqlDriver)
+	// sqlDriver.Conn = db
+
+	// repo := taskRepository.NewTaskRepository(sqlDriver)
+
+	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
+	})
+
+	t.Run("準正常系 存在しないIDで検索してエラーとなること", func(t *testing.T) {
 	})
 }

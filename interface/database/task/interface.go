@@ -8,8 +8,8 @@ import (
 
 // TaskRepository
 type TaskRepository interface {
-	Fetch(ctx context.Context, cursor string, num int64) (tasks []domain.Task, nextCursor string, err error)
-	GetByID(ctx context.Context, id int64) (task domain.Task, err error)
+	FindByUserID(ctx context.Context, limit int64, offset int64) ([]domain.Task, error)
+	GetByID(ctx context.Context, id int64) (domain.Task, error)
 	Create(ctx context.Context, task domain.Task) error
 	Update(ctx context.Context, task domain.Task) error
 	Delete(ctx context.Context, id int64) error

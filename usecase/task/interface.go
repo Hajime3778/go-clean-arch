@@ -7,7 +7,7 @@ import (
 )
 
 type TaskUsecase interface {
-	Fetch(ctx context.Context, cursor string, num int64) ([]domain.Task, string, error)
+	FindByUserID(ctx context.Context, limit int64, offset int64) ([]domain.Task, error)
 	GetByID(ctx context.Context, id int64) (domain.Task, error)
 	Create(ctx context.Context, task domain.Task) error
 	Update(ctx context.Context, task domain.Task) error

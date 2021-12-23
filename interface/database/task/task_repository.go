@@ -17,13 +17,13 @@ func NewTaskRepository(sqlDriver database.SqlDriver) TaskRepository {
 	return &taskRepository{sqlDriver}
 }
 
-// NewTaskUsecase タスクを指定した範囲まで取得します
-func (tr *taskRepository) Fetch(ctx context.Context, cursor string, num int64) (res []domain.Task, nextCursor string, err error) {
+// FindByUserID タスクをユーザーIDで複数件取得します
+func (tr *taskRepository) FindByUserID(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
 	panic("not implemented") // TODO: Implement
 }
 
 // GetByID IDでタスクを1件取得します
-func (tr *taskRepository) GetByID(ctx context.Context, id int64) (task domain.Task, err error) {
+func (tr *taskRepository) GetByID(ctx context.Context, id int64) (domain.Task, error) {
 	query := `
 		SELECT 
 			* 
@@ -48,6 +48,7 @@ func (tr *taskRepository) GetByID(ctx context.Context, id int64) (task domain.Ta
 		return domain.Task{}, domain.ErrRecordNotFound
 	}
 
+	task := domain.Task{}
 	err = rows.Scan(
 		&task.ID,
 		&task.UserID,

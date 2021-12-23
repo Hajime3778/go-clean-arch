@@ -56,12 +56,11 @@ func (t *taskHandler) GetByID(ctx context.Context, w http.ResponseWriter, id int
 		return
 	}
 
-	output, err := json.Marshal(task)
 	if err != nil {
 		writeJSONResponse(w, http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()})
 		return
 	}
-	writeJSONResponse(w, http.StatusOK, string(output))
+	writeJSONResponse(w, http.StatusOK, task)
 }
 
 // update IDでタスクを1件更新します
