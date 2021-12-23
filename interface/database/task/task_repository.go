@@ -22,8 +22,8 @@ func (tr *taskRepository) Fetch(ctx context.Context, cursor string, num int64) (
 	panic("not implemented") // TODO: Implement
 }
 
-// FetchByID IDでタスクを1件取得します
-func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (task domain.Task, err error) {
+// GetByID IDでタスクを1件取得します
+func (tr *taskRepository) GetByID(ctx context.Context, id int64) (task domain.Task, err error) {
 	query := `
 		SELECT 
 			* 
@@ -31,8 +31,6 @@ func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (task domain.
 			tasks
 		WHERE 
 			id = ?
-		ORDER BY id 
-		LIMIT 1
 	`
 	rows, err := tr.SqlDriver.QueryContext(ctx, query, id)
 	if err != nil {

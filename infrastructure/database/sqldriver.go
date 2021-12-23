@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 
@@ -35,7 +36,11 @@ func NewSqlConnenction() database.SqlDriver {
 
 	conn, err := sql.Open(`mysql`, dsn)
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err)
+	}
+	err = conn.Ping()
+	if err != nil {
+		log.Fatalf("mysql connect failed: '%s'", err)
 	}
 	return &SqlDriver{conn}
 }

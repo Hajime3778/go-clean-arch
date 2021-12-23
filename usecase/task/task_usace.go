@@ -21,9 +21,9 @@ func (tu *taskUsecase) Fetch(ctx context.Context, cursor string, num int64) ([]d
 	panic("not implemented") // TODO: Implement
 }
 
-// FetchByID IDでタスクを1件取得します
-func (tu *taskUsecase) FetchByID(ctx context.Context, id int64) (domain.Task, error) {
-	task, err := tu.repo.FetchByID(ctx, id)
+// GetByID IDでタスクを1件取得します
+func (tu *taskUsecase) GetByID(ctx context.Context, id int64) (domain.Task, error) {
+	task, err := tu.repo.GetByID(ctx, id)
 	if err != nil {
 		return domain.Task{}, err
 	}
@@ -41,7 +41,7 @@ func (tu *taskUsecase) Create(ctx context.Context, task domain.Task) error {
 
 // Update IDでタスクを1件更新します
 func (tu *taskUsecase) Update(ctx context.Context, task domain.Task) error {
-	_, err := tu.repo.FetchByID(ctx, task.ID)
+	_, err := tu.repo.GetByID(ctx, task.ID)
 	if err != nil {
 		return err
 	}
