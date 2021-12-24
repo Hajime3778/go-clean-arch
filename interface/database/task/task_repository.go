@@ -18,8 +18,51 @@ func NewTaskRepository(sqlDriver database.SqlDriver) TaskRepository {
 }
 
 // FindByUserID タスクをユーザーIDで複数件取得します
-func (tr *taskRepository) FindByUserID(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
-	panic("not implemented") // TODO: Implement
+func (tr *taskRepository) FindByUserID(ctx context.Context, userID int64, limit int64, offset int64) ([]domain.Task, error) {
+	query := `
+		SELECT
+			*
+		FROM
+			tasks
+		WHERE
+			user_id = ?
+		ORDER BY
+			due_date
+		LIMIT ? OFFSET ?
+	`
+
+	rows, err := tr.SqlDriver.QueryContext(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}()
+
+	tasks := make([]domain.Task, 0)
+	for rows.Next() {
+		task := domain.Task{}
+		err = rows.Scan(
+			&task.ID,
+			&task.UserID,
+			&task.Title,
+			&task.Content,
+			&task.DueDate,
+			&task.UpdatedAt,
+			&task.CreatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	return tasks, nil
 }
 
 // GetByID IDでタスクを1件取得します
