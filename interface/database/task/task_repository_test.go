@@ -39,7 +39,7 @@ func TestFindByUserID(t *testing.T) {
 		LIMIT ? OFFSET ?
 	`
 
-	t.Run("正常系 指定したユーザーIDのみすべて取得されていること", func(t *testing.T) {
+	t.Run("正常系 指定したユーザーIDで取得", func(t *testing.T) {
 		userID := int64(1)
 		rows := sqlmock.NewRows([]string{"id", "user_id", "title", "content", "due_date", "updated_at", "created_at"})
 		mockTasks := createMockTasks(5, userID)
