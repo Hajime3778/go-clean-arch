@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
+	httpUtil "github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp"
 	usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
 )
 
@@ -40,13 +41,13 @@ func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r 
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(&requestTask)
 	if err != nil {
-		writeJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 		return
 	}
 
 	var ok bool
 	if ok, err = requestTask.IsCreateRequestValid(); !ok {
-		writeJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 		return
 	}
 
@@ -59,7 +60,7 @@ func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r 
 
 	err = t.taskUsecase.Create(ctx, task)
 	if err != nil {
-		writeJSONResponse(w, getStatusCode(err), domain.ErrorResponse{Message: err.Error()})
+		httpUtil.WriteJSONResponse(w, httpUtil.GetStatusCode(err), domain.ErrorResponse{Message: err.Error()})
 		return
 	}
 

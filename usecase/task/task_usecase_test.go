@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
+	"github.com/Hajime3778/go-clean-arch/interface/database/task/mock"
 	usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
-	"github.com/Hajime3778/go-clean-arch/usecase/task/mock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,7 +45,7 @@ func TestGetByID(t *testing.T) {
 		mockTask := domain.Task{
 			ID:        1,
 			UserID:    1,
-			Title:     "test titke",
+			Title:     "test title",
 			Content:   "test content",
 			DueDate:   time.Now(),
 			CreatedAt: time.Now(),

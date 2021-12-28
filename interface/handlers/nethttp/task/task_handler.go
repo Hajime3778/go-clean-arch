@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
+	httpUtil "github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp"
 	usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
 )
 
@@ -52,15 +53,10 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 func (t *taskHandler) GetByID(ctx context.Context, w http.ResponseWriter, id int64) {
 	task, err := t.taskUsecase.GetByID(ctx, id)
 	if err != nil {
-		writeJSONResponse(w, getStatusCode(err), domain.ErrorResponse{Message: err.Error()})
+		httpUtil.WriteJSONResponse(w, httpUtil.GetStatusCode(err), domain.ErrorResponse{Message: err.Error()})
 		return
 	}
-
-	if err != nil {
-		writeJSONResponse(w, http.StatusInternalServerError, domain.ErrorResponse{Message: err.Error()})
-		return
-	}
-	writeJSONResponse(w, http.StatusOK, task)
+	httpUtil.WriteJSONResponse(w, http.StatusOK, task)
 }
 
 // update IDでタスクを1件更新します
@@ -70,13 +66,13 @@ func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(&requestTask)
 	if err != nil {
-		writeJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 		return
 	}
 
 	var ok bool
 	if ok, err = requestTask.IsUpdateRequestValid(); !ok {
-		writeJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 		return
 	}
 
@@ -89,7 +85,7 @@ func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http
 
 	err = t.taskUsecase.Update(ctx, task)
 	if err != nil {
-		writeJSONResponse(w, getStatusCode(err), domain.ErrorResponse{Message: err.Error()})
+		httpUtil.WriteJSONResponse(w, httpUtil.GetStatusCode(err), domain.ErrorResponse{Message: err.Error()})
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -99,7 +95,7 @@ func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http
 func (t *taskHandler) delete(ctx context.Context, w http.ResponseWriter, id int64) {
 	err := t.taskUsecase.Delete(ctx, id)
 	if err != nil {
-		writeJSONResponse(w, getStatusCode(err), domain.ErrorResponse{Message: err.Error()})
+		httpUtil.WriteJSONResponse(w, httpUtil.GetStatusCode(err), domain.ErrorResponse{Message: err.Error()})
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
