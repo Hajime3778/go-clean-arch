@@ -30,7 +30,7 @@ func TestTaskIndexHandlerTest(t *testing.T) {
 	})
 }
 
-func TestUpdateSS(t *testing.T) {
+func TestCreate(t *testing.T) {
 	t.Run("正常系 1件追加", func(t *testing.T) {
 		reqTask := task.CreateTaskRequest{
 			Title:   "test title",
