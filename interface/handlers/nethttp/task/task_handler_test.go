@@ -1,6 +1,7 @@
 package task_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -17,7 +18,7 @@ import (
 
 func TestTaskHandlerTest(t *testing.T) {
 	t.Run("異常系 パラメータが読み取れない場合 400エラーとなること", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "http://localhost:8080/tasks/hogehoge", nil)
+		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks/hogehoge", nil)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockGetByID: func(ctx context.Context, id int64) (domain.Task, error) {
@@ -31,11 +32,23 @@ func TestTaskHandlerTest(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 	})
+
+	t.Run("異常系 実装していないメソッドでリクエストした場合、404エラーとなること", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodOptions, "http://example.com/tasks/5", nil)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{}
+		handler := task.NewTaskHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, res.StatusCode)
+	})
 }
 
 func TestGetByID(t *testing.T) {
 	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "http://localhost:8080/tasks/5", nil)
+		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks/5", nil)
 		w := httptest.NewRecorder()
 		mockTask := domain.Task{
 			ID:        1,
@@ -76,7 +89,7 @@ func TestGetByID(t *testing.T) {
 	})
 
 	t.Run("異常系 Usecase実行時にデータが存在しないエラーが発生した場合、404エラーとなること", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "http://localhost:8080/tasks/5", nil)
+		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks/5", nil)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockGetByID: func(ctx context.Context, id int64) (domain.Task, error) {
@@ -92,11 +105,140 @@ func TestGetByID(t *testing.T) {
 	})
 
 	t.Run("異常系 Usecase実行時に想定外のエラーが発生した場合、500エラーとなること", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "http://localhost:8080/tasks/5", nil)
+		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks/5", nil)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockGetByID: func(ctx context.Context, id int64) (domain.Task, error) {
 				return domain.Task{}, errors.New("test error")
+			},
+		}
+		handler := task.NewTaskHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+	})
+}
+
+func TestUpdate(t *testing.T) {
+	t.Run("正常系 1件更新", func(t *testing.T) {
+		reqTask := task.UpdateTaskRequest{
+			Title:   "test title",
+			Content: "test content",
+			DueDate: time.Now(),
+		}
+		byteTask, _ := json.Marshal(reqTask)
+		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
+			bytes.NewBuffer(byteTask),
+		)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{
+			MockUpdate: func(ctx context.Context, task domain.Task) error {
+				return nil
+			},
+		}
+		handler := task.NewTaskHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	})
+
+	t.Run("準正常系 リクエストパラメータが足りていない場合、エラーとなり400が返却されること", func(t *testing.T) {
+		reqTask := task.UpdateTaskRequest{
+			Title:   "test title",
+			DueDate: time.Now(),
+		}
+		byteTask, _ := json.Marshal(reqTask)
+		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
+			bytes.NewBuffer(byteTask),
+		)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{
+			MockUpdate: func(ctx context.Context, task domain.Task) error {
+				return nil
+			},
+		}
+		handler := task.NewTaskHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+	})
+
+	t.Run("準正常系 リクエスト形式が間違っている場合、エラーとなり400が返却されること", func(t *testing.T) {
+		req := domain.ErrorResponse{
+			Message: "test",
+		}
+		byteTask, _ := json.Marshal(req)
+		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
+			bytes.NewBuffer(byteTask),
+		)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{
+			MockUpdate: func(ctx context.Context, task domain.Task) error {
+				return nil
+			},
+		}
+		handler := task.NewTaskHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+	})
+
+	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		reqTask := task.UpdateTaskRequest{
+			Title:   "test title",
+			Content: "test content",
+			DueDate: time.Now(),
+		}
+		byteTask, _ := json.Marshal(reqTask)
+		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
+			bytes.NewBuffer(byteTask),
+		)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{
+			MockUpdate: func(ctx context.Context, task domain.Task) error {
+				return errors.New("test error")
+			},
+		}
+		handler := task.NewTaskHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+	})
+}
+
+func TestDelete(t *testing.T) {
+	t.Run("正常系 1件削除", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodDelete, "http://example.com/tasks/5", nil)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{
+			MockDelete: func(ctx context.Context, id int64) error {
+				return nil
+			},
+		}
+		handler := task.NewTaskHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusNoContent, res.StatusCode)
+	})
+
+	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodDelete, "http://example.com/tasks/5", nil)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{
+			MockDelete: func(ctx context.Context, id int64) error {
+				return errors.New("test error")
 			},
 		}
 		handler := task.NewTaskHandler(mockUsecase)
