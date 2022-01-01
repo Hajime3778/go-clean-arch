@@ -3,7 +3,9 @@ package task
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
 	httpUtil "github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp"
@@ -35,6 +37,14 @@ func (t *taskIndexHandler) Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *taskIndexHandler) findByUserID(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	q, err := url.Parse(r.RequestURI)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+	query := q.Query()
+	fmt.Printf("limit: %s\n", query["limit"][0])
+	fmt.Printf("offset: %s\n", query["offset"][0])
 }
 
 func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -54,7 +64,6 @@ func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r 
 	}
 
 	task := domain.Task{
-		UserID:  1, // TODO: トークンから取得するようにする
 		Title:   requestTask.Title,
 		Content: requestTask.Content,
 		DueDate: requestTask.DueDate,
