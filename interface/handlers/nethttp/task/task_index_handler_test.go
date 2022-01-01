@@ -30,6 +30,20 @@ func TestTaskIndexHandlerTest(t *testing.T) {
 	})
 }
 
+func TestFindByIDTest(t *testing.T) {
+	t.Run("正常系", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks", nil)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{}
+		handler := task.NewTaskIndexHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+	})
+}
+
 func TestCreate(t *testing.T) {
 	t.Run("正常系 1件追加", func(t *testing.T) {
 		reqTask := task.CreateTaskRequest{

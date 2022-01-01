@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
@@ -27,12 +26,15 @@ func (t *taskIndexHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	switch r.Method {
 	case http.MethodGet:
-		fmt.Println("fetch all tasks")
+		t.findByUserID(ctx, w, r)
 	case http.MethodPost:
 		t.create(ctx, w, r)
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}
+}
+
+func (t *taskIndexHandler) findByUserID(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r *http.Request) {
