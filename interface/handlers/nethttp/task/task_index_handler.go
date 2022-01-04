@@ -3,9 +3,9 @@ package task
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
 	httpUtil "github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp"
@@ -43,8 +43,26 @@ func (t *taskIndexHandler) findByUserID(ctx context.Context, w http.ResponseWrit
 		return
 	}
 	query := q.Query()
-	fmt.Printf("limit: %s\n", query["limit"][0])
-	fmt.Printf("offset: %s\n", query["offset"][0])
+
+	limit, err := strconv.ParseInt(query["limit"][0], 10, 64)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	offset, err := strconv.ParseInt(query["offset"][0], 10, 64)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	tasks, err := t.taskUsecase.FindByUserID(ctx, limit, offset)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, httpUtil.GetStatusCode(err), domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	httpUtil.WriteJSONResponse(w, http.StatusOK, tasks)
 }
 
 func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r *http.Request) {
