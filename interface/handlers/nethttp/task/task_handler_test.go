@@ -146,7 +146,7 @@ func TestUpdate(t *testing.T) {
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	})
 
-	t.Run("準正常系 リクエストパラメータが足りていない場合、エラーとなり400が返却されること", func(t *testing.T) {
+	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
 		reqTask := task.UpdateTaskRequest{
 			Title:   "test title",
 			DueDate: time.Now(),
@@ -169,7 +169,7 @@ func TestUpdate(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 	})
 
-	t.Run("準正常系 リクエスト形式が間違っている場合、エラーとなり400が返却されること", func(t *testing.T) {
+	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
 		req := domain.ErrorResponse{
 			Message: "test",
 		}

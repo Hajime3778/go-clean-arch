@@ -31,16 +31,80 @@ func TestTaskIndexHandlerTest(t *testing.T) {
 }
 
 func TestFindByIDTest(t *testing.T) {
-	t.Run("正常系", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks", nil)
+	t.Run("正常系 複数取得", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks?limit=10&offset=0", nil)
 		w := httptest.NewRecorder()
-		mockUsecase := &mock.MockTaskUsecase{}
+		mockUsecase := &mock.MockTaskUsecase{
+			MockFindByUserID: func(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
+				return make([]domain.Task, 0), nil
+			},
+		}
 		handler := task.NewTaskIndexHandler(mockUsecase)
 		handler.Handler(w, r)
 		res := w.Result()
 		defer res.Body.Close()
 
 		assert.Equal(t, http.StatusOK, res.StatusCode)
+	})
+	t.Run("準正常系 パラメータが指定されていない場合、400エラーとなること", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks", nil)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{
+			MockFindByUserID: func(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
+				return make([]domain.Task, 0), nil
+			},
+		}
+		handler := task.NewTaskIndexHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+	})
+	t.Run("準正常系 limitが数字でない場合、400エラーとなること", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks?limit=foo&offset=0", nil)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{
+			MockFindByUserID: func(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
+				return make([]domain.Task, 0), nil
+			},
+		}
+		handler := task.NewTaskIndexHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+	})
+	t.Run("準正常系 offsetが数字でない場合、400エラーとなること", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks?limit=0&offset=foo", nil)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{
+			MockFindByUserID: func(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
+				return make([]domain.Task, 0), nil
+			},
+		}
+		handler := task.NewTaskIndexHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+	})
+	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks?limit=0&offset=0", nil)
+		w := httptest.NewRecorder()
+		mockUsecase := &mock.MockTaskUsecase{
+			MockFindByUserID: func(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
+				return nil, errors.New("test error")
+			},
+		}
+		handler := task.NewTaskIndexHandler(mockUsecase)
+		handler.Handler(w, r)
+		res := w.Result()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 	})
 }
 
@@ -69,7 +133,7 @@ func TestCreate(t *testing.T) {
 		assert.Equal(t, http.StatusCreated, res.StatusCode)
 	})
 
-	t.Run("準正常系 リクエストパラメータが足りていない場合、エラーとなり400が返却されること", func(t *testing.T) {
+	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
 		reqTask := task.CreateTaskRequest{
 			Title:   "test title",
 			DueDate: time.Now(),
@@ -92,7 +156,7 @@ func TestCreate(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 	})
 
-	t.Run("準正常系 リクエスト形式が間違っている場合、エラーとなり400が返却されること", func(t *testing.T) {
+	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
 		req := domain.ErrorResponse{
 			Message: "test",
 		}

@@ -37,20 +37,18 @@ func (t *taskIndexHandler) Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *taskIndexHandler) findByUserID(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	q, err := url.Parse(r.RequestURI)
-	if err != nil {
-		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
-		return
-	}
+	q, _ := url.Parse(r.RequestURI)
 	query := q.Query()
 
-	limit, err := strconv.ParseInt(query["limit"][0], 10, 64)
+	strLimit := query.Get("limit")
+	strOffset := query.Get("offset")
+
+	limit, err := strconv.ParseInt(strLimit, 10, 64)
 	if err != nil {
 		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 		return
 	}
-
-	offset, err := strconv.ParseInt(query["offset"][0], 10, 64)
+	offset, err := strconv.ParseInt(strOffset, 10, 64)
 	if err != nil {
 		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 		return
