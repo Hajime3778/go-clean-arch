@@ -80,8 +80,8 @@ func TestGetByID(t *testing.T) {
 func TestCreate(t *testing.T) {
 	t.Run("正常系 1件追加", func(t *testing.T) {
 		mockTaskRepo := &mock.MockTaskRepo{
-			MockCreate: func(ctx context.Context, task domain.Task) error {
-				return nil
+			MockCreate: func(ctx context.Context, task domain.Task) (int64, error) {
+				return 1, nil
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
@@ -92,9 +92,8 @@ func TestCreate(t *testing.T) {
 
 	t.Run("異常系 Repository実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
 		mockTaskRepo := &mock.MockTaskRepo{
-
-			MockCreate: func(ctx context.Context, task domain.Task) error {
-				return domain.ErrInternalServerError
+			MockCreate: func(ctx context.Context, task domain.Task) (int64, error) {
+				return 0, domain.ErrInternalServerError
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)

@@ -110,16 +110,21 @@ func (tr *taskRepository) GetByID(ctx context.Context, id int64) (domain.Task, e
 }
 
 // Create タスクを1件作成します
-func (tr *taskRepository) Create(ctx context.Context, task domain.Task) error {
+func (tr *taskRepository) Create(ctx context.Context, task domain.Task) (int64, error) {
 	query := `
 		INSERT INTO tasks(user_id,title,content,due_date) VALUES(?,?,?,?)
 	`
-	_, err := tr.SqlDriver.ExecuteContext(ctx, query, task.UserID, task.Title, task.Content, task.DueDate)
+	result, err := tr.SqlDriver.ExecuteContext(ctx, query, task.UserID, task.Title, task.Content, task.DueDate)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	createdId, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return createdId, nil
 }
 
 // Update IDでタスクを1件更新します

@@ -10,6 +10,8 @@ import (
 
 	"github.com/Hajime3778/go-clean-arch/domain"
 	infrastructure "github.com/Hajime3778/go-clean-arch/infrastructure/database"
+	"github.com/Hajime3778/go-clean-arch/interface/database"
+	mockSqlDriver "github.com/Hajime3778/go-clean-arch/interface/database/mock"
 	taskRepository "github.com/Hajime3778/go-clean-arch/interface/database/task"
 	"github.com/stretchr/testify/assert"
 
@@ -172,13 +174,13 @@ func TestCreate(t *testing.T) {
 		t.Fatalf("sqlmock error: '%s'", err)
 	}
 
-	sqlDriver := new(infrastructure.SqlDriver)
-	sqlDriver.Conn = db
-
-	repo := taskRepository.NewTaskRepository(sqlDriver)
-	query := "INSERT INTO tasks(user_id,title,content,due_date) VALUES(?,?,?,?)"
-
 	t.Run("正常系 1件追加", func(t *testing.T) {
+		sqlDriver := new(infrastructure.SqlDriver)
+		sqlDriver.Conn = db
+
+		repo := taskRepository.NewTaskRepository(sqlDriver)
+		query := "INSERT INTO tasks(user_id,title,content,due_date) VALUES(?,?,?,?)"
+
 		mockTask := domain.Task{
 			UserID:  1,
 			Title:   "test title",
@@ -190,11 +192,18 @@ func TestCreate(t *testing.T) {
 			WithArgs(mockTask.UserID, mockTask.Title, mockTask.Content, mockTask.DueDate).
 			WillReturnResult(sqlmock.NewResult(12, 1))
 
-		err = repo.Create(context.TODO(), mockTask)
+		id, err := repo.Create(context.TODO(), mockTask)
 		assert.NoError(t, err)
+		assert.NotEqual(t, int64(0), id)
 	})
 
 	t.Run("異常系 クエリ実行で失敗した場合エラーが返却されること", func(t *testing.T) {
+		sqlDriver := new(infrastructure.SqlDriver)
+		sqlDriver.Conn = db
+
+		repo := taskRepository.NewTaskRepository(sqlDriver)
+		query := "INSERT INTO tasks(user_id,title,content,due_date) VALUES(?,?,?,?)"
+
 		mockTask := domain.Task{
 			UserID:    1,
 			Title:     "test title",
@@ -209,8 +218,46 @@ func TestCreate(t *testing.T) {
 			WithArgs(mockTask.UserID, mockTask.Title, mockTask.Content, mockTask.DueDate).
 			WillReturnError(mockErr)
 
-		err = repo.Create(context.TODO(), mockTask)
+		id, err := repo.Create(context.TODO(), mockTask)
 		assert.Equal(t, mockErr, err)
+		assert.Equal(t, int64(0), id)
+	})
+
+	t.Run("異常系 追加後IDで失敗した場合エラーが返却されtること", func(t *testing.T) {
+
+		mockErr := errors.New("test error")
+		mockResult := &mockSqlDriver.MockResult{
+			MockLastInsertId: func() (int64, error) {
+				return 0, mockErr
+			},
+		}
+		mockDriver := &mockSqlDriver.MockSqlDriver{
+			MockExecuteContext: func(context.Context, string, ...interface{}) (database.Result, error) {
+				return mockResult, nil
+			},
+		}
+		mockDriver.Conn = db
+
+		repo := taskRepository.NewTaskRepository(mockDriver)
+		query := "INSERT INTO tasks(user_id,title,content,due_date) VALUES(?,?,?,?)"
+
+		mockTask := domain.Task{
+			UserID:    1,
+			Title:     "test title",
+			Content:   "test content",
+			DueDate:   time.Now(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		prep := mock.ExpectPrepare(regexp.QuoteMeta(query))
+		prep.ExpectExec().
+			WithArgs(mockTask.UserID, mockTask.Title, mockTask.Content, mockTask.DueDate).
+			WillReturnResult(sqlmock.NewResult(12, 1))
+
+		id, err := repo.Create(context.TODO(), mockTask)
+		assert.Equal(t, mockErr, err)
+		assert.Equal(t, int64(0), id)
 	})
 }
 

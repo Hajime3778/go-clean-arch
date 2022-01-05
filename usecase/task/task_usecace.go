@@ -41,7 +41,7 @@ func (tu *taskUsecase) Create(ctx context.Context, task domain.Task) error {
 	// TODO: トークンから取得するように
 	userID := int64(1)
 	task.UserID = userID
-	err := tu.repo.Create(ctx, task)
+	_, err := tu.repo.Create(ctx, task)
 	if err != nil {
 		return err
 	}
