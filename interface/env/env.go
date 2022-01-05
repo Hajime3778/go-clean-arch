@@ -1,5 +1,6 @@
 package env
 
 type Env interface {
-	Load()
+	Init()
+	LoadEnvFile(string)
 }

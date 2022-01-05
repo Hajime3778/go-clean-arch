@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	env.NewEnv().Load()
+	env.NewEnv().Init()
 	sqlDriver := database.NewSqlConnenction()
 	middleware := middleware.Middleware
 

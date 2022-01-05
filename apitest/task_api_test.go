@@ -1,29 +1,40 @@
 package apitest_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
+	"github.com/Hajime3778/go-clean-arch/infrastructure/database"
+	"github.com/Hajime3778/go-clean-arch/infrastructure/env"
+	repository "github.com/Hajime3778/go-clean-arch/interface/database/task"
 	"github.com/stretchr/testify/assert"
 )
 
 const taskURL = "http://localhost:8080/tasks"
 
 func TestGetByID(t *testing.T) {
-	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
-		req, _ := http.NewRequest("GET", taskURL+"/2", nil)
+	env.NewEnv().LoadEnvFile("../.env")
+	sqlDriver := database.NewSqlConnenction()
+	repo := repository.NewTaskRepository(sqlDriver)
 
-		expectedTask := domain.Task{
-			ID:      2,
+	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
+		createTask := domain.Task{
 			UserID:  1,
-			Title:   "買い出しに行く",
-			Content: "スーパーで、卵と鶏肉と三葉を買う",
+			Title:   "test title",
+			Content: "test content",
 			DueDate: time.Now(),
 		}
+		createdID, err := repo.Create(context.TODO(), createTask)
+		if err != nil {
+			t.Error(err)
+		}
 
+		req, _ := http.NewRequest("GET", taskURL+"/"+strconv.Itoa(int(createdID)), nil)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -37,8 +48,8 @@ func TestGetByID(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		assert.Equal(t, expectedTask.ID, resTask.ID)
-		assert.Equal(t, expectedTask.Title, resTask.Title)
-		assert.Equal(t, expectedTask.Content, resTask.Content)
+		assert.Equal(t, createdID, resTask.ID)
+		assert.Equal(t, createTask.Title, resTask.Title)
+		assert.Equal(t, createTask.Content, resTask.Content)
 	})
 }
