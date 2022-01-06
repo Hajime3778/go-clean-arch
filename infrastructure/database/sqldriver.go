@@ -32,6 +32,7 @@ func NewSqlConnenction() database.SqlDriver {
 	connStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
 	val := url.Values{}
 	val.Add("parseTime", "1")
+	val.Add("loc", "Asia/Tokyo")
 	dsn := fmt.Sprintf("%s?%s", connStr, val.Encode())
 
 	conn, err := sql.Open(`mysql`, dsn)
