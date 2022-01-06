@@ -1,7 +1,7 @@
 -- users
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
-  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL DEFAULT '',
   `email` varchar(50) NOT NULL DEFAULT '',
   `password` varchar(200) NOT NULL DEFAULT '',
@@ -17,8 +17,8 @@ INSERT INTO `users` (`id`, `name`, `email`, `password`, `salt`) VALUES
 -- tasks
 DROP TABLE IF EXISTS `tasks`;
 CREATE TABLE `tasks` (
-  `id` int(10) NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) NOT NULL,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
   `title` varchar(50) NOT NULL DEFAULT '',
   `content` varchar(200) NOT NULL DEFAULT '',
   `due_date` datetime,
