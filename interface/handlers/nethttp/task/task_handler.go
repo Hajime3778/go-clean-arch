@@ -31,8 +31,7 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	param := strings.TrimPrefix(r.URL.Path, TaskPath)
 	taskID, err := strconv.ParseInt(param, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 		log.Println(err.Error())
 		return
 	}
