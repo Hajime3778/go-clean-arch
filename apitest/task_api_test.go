@@ -1,6 +1,7 @@
 package apitest_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 	interfaceDB "github.com/Hajime3778/go-clean-arch/interface/database"
 	taskRepository "github.com/Hajime3778/go-clean-arch/interface/database/task"
 	userRepository "github.com/Hajime3778/go-clean-arch/interface/database/user"
+	taskHandler "github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp/task"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -222,9 +224,65 @@ func TestGetByID(t *testing.T) {
 	})
 }
 
-func TestCreate(t *testing.T) {}
+func TestCreate(t *testing.T) {
+	t.Run("正常系 1件作成し、登録結果が正しいこと", func(t *testing.T) {
+		createTask := taskHandler.CreateTaskRequest{
+			Title:   "test title",
+			Content: "test content",
+			DueDate: time.Now(),
+		}
+		byteCreateTask, _ := json.Marshal(createTask)
+		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteCreateTask))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
 
-func TestUpdate(t *testing.T) {}
+		assert.Equal(t, http.StatusCreated, response.StatusCode)
+
+		// TODO: 値の検証はユーザー機能が完成してから実装する
+	})
+
+	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
+		createTask := taskHandler.CreateTaskRequest{
+			Title: "test title",
+		}
+		byteCreateTask, _ := json.Marshal(createTask)
+		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteCreateTask))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+	})
+
+	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
+		failReq := domain.ErrorResponse{
+			Message: "test",
+		}
+		byteReq, _ := json.Marshal(failReq)
+		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteReq))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+	})
+}
+
+func TestUpdate(t *testing.T) {
+}
 
 func TestDelete(t *testing.T) {}
 
