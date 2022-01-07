@@ -145,19 +145,18 @@ func TestFindByUserID(t *testing.T) {
 
 func TestGetByID(t *testing.T) {
 	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
-		repo := taskRepository.NewTaskRepository(sqlDriver)
-		createTask := domain.Task{
-			UserID:  1,
-			Title:   "test title",
-			Content: "test content",
-			DueDate: time.Now(),
-		}
-		createdID, err := repo.Create(context.TODO(), createTask)
+		ctx := context.TODO()
+		userID, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
+		createdTasks, err := createTasks(1, userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		createdTask := createdTasks[0]
 
-		req, _ := http.NewRequest("GET", taskURL+"/"+strconv.Itoa(int(createdID)), nil)
+		req, _ := http.NewRequest("GET", taskURL+"/"+strconv.Itoa(int(createdTask.ID)), nil)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -171,9 +170,9 @@ func TestGetByID(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.Equal(t, createdID, resTask.ID)
-		assert.Equal(t, createTask.Title, resTask.Title)
-		assert.Equal(t, createTask.Content, resTask.Content)
+		assert.Equal(t, createdTask.ID, resTask.ID)
+		assert.Equal(t, createdTask.Title, resTask.Title)
+		assert.Equal(t, createdTask.Content, resTask.Content)
 	})
 
 	t.Run("準正常系 存在しないIDで検索した際に404エラーとなること", func(t *testing.T) {
@@ -225,14 +224,14 @@ func TestGetByID(t *testing.T) {
 }
 
 func TestCreate(t *testing.T) {
-	t.Run("正常系 1件作成し、登録結果が正しいこと", func(t *testing.T) {
-		createTask := taskHandler.CreateTaskRequest{
+	t.Run("正常系 1件作成し登録結果が正しいこと", func(t *testing.T) {
+		createRequest := taskHandler.CreateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
 			DueDate: time.Now(),
 		}
-		byteCreateTask, _ := json.Marshal(createTask)
-		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteCreateTask))
+		byteRequest, _ := json.Marshal(createRequest)
+		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteRequest))
 		req.Header.Set("Content-Type", "application/json")
 		client := new(http.Client)
 		response, err := client.Do(req)
@@ -247,11 +246,11 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
-		createTask := taskHandler.CreateTaskRequest{
+		createRequest := taskHandler.CreateTaskRequest{
 			Title: "test title",
 		}
-		byteCreateTask, _ := json.Marshal(createTask)
-		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteCreateTask))
+		byteRequest, _ := json.Marshal(createRequest)
+		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteRequest))
 		req.Header.Set("Content-Type", "application/json")
 		client := new(http.Client)
 		response, err := client.Do(req)
@@ -264,11 +263,11 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
-		failReq := domain.ErrorResponse{
+		createRequest := domain.ErrorResponse{
 			Message: "test",
 		}
-		byteReq, _ := json.Marshal(failReq)
-		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteReq))
+		byteRequest, _ := json.Marshal(createRequest)
+		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteRequest))
 		req.Header.Set("Content-Type", "application/json")
 		client := new(http.Client)
 		response, err := client.Do(req)
@@ -282,6 +281,139 @@ func TestCreate(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	t.Run("正常系 1件更新し結果が正しいこと", func(t *testing.T) {
+		ctx := context.TODO()
+		repo := taskRepository.NewTaskRepository(sqlDriver)
+
+		userID, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		createdTask, err := createTasks(1, userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		updateRequest := taskHandler.UpdateTaskRequest{
+			Title:   "updated title",
+			Content: "updated content",
+			DueDate: time.Now().Round(time.Second),
+		}
+		byteRequest, _ := json.Marshal(updateRequest)
+
+		req, _ := http.NewRequest("PUT", taskURL+"/"+strconv.Itoa(int(createdTask[0].ID)), bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		updatedTask, err := repo.GetByID(ctx, createdTask[0].ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, createdTask[0].ID, updatedTask.ID)
+		assert.Equal(t, updateRequest.Title, updatedTask.Title)
+		assert.Equal(t, updateRequest.Content, updatedTask.Content)
+		assert.True(t, updateRequest.DueDate.Equal(updatedTask.DueDate))
+	})
+
+	t.Run("準正常系 存在しないIDを指定した際に404エラーとなること", func(t *testing.T) {
+		taskID := int(time.Now().UnixNano())
+		updateRequest := taskHandler.UpdateTaskRequest{
+			Title:   "test title",
+			Content: "test content",
+			DueDate: time.Now().Round(time.Second),
+		}
+		byteRequest, _ := json.Marshal(updateRequest)
+		req, _ := http.NewRequest("PUT", taskURL+"/"+strconv.Itoa(taskID), bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		if response.StatusCode == http.StatusOK {
+			t.Fatal("成功レスポンスのためテスト失敗")
+		}
+
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, http.StatusNotFound, response.StatusCode)
+		assert.Equal(t, resError.Message, domain.ErrRecordNotFound.Error())
+	})
+
+	t.Run("準正常系 指定されたIDが数字でない場合、400エラーとなること", func(t *testing.T) {
+		updateRequest := taskHandler.UpdateTaskRequest{
+			Title:   "test title",
+			Content: "test content",
+			DueDate: time.Now().Round(time.Second),
+		}
+		byteRequest, _ := json.Marshal(updateRequest)
+		req, _ := http.NewRequest("PUT", taskURL+"/hoge", bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		if response.StatusCode == http.StatusOK {
+			t.Fatal("成功レスポンスのためテスト失敗")
+		}
+
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
+	})
+
+	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
+		updateRequest := taskHandler.UpdateTaskRequest{
+			Title: "test title",
+		}
+		byteRequest, _ := json.Marshal(updateRequest)
+		req, _ := http.NewRequest("PUT", taskURL+"/123", bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+	})
+
+	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
+		updateRequest := domain.ErrorResponse{
+			Message: "test",
+		}
+		byteRequest, _ := json.Marshal(updateRequest)
+		req, _ := http.NewRequest("PUT", taskURL+"/123", bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+	})
 }
 
 func TestDelete(t *testing.T) {}
