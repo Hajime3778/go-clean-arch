@@ -20,9 +20,10 @@ func TestTaskHandlerTest(t *testing.T) {
 	t.Run("異常系 パラメータが読み取れない場合 400エラーとなること", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks/hogehoge", nil)
 		w := httptest.NewRecorder()
+		mockErr := errors.New("test error")
 		mockUsecase := &mock.MockTaskUsecase{
 			MockGetByID: func(ctx context.Context, id int64) (domain.Task, error) {
-				return domain.Task{}, errors.New("test error")
+				return domain.Task{}, mockErr
 			},
 		}
 		handler := task.NewTaskHandler(mockUsecase)
@@ -30,7 +31,15 @@ func TestTaskHandlerTest(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
 
 	t.Run("異常系 実装していないメソッドでリクエストした場合、404エラーとなること", func(t *testing.T) {
@@ -74,7 +83,7 @@ func TestGetByID(t *testing.T) {
 		decoder.DisallowUnknownFields()
 		err := decoder.Decode(&resTask)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		assert.NoError(t, err)
@@ -88,7 +97,7 @@ func TestGetByID(t *testing.T) {
 		assert.True(t, mockTask.UpdatedAt.Equal(resTask.UpdatedAt))
 	})
 
-	t.Run("異常系 Usecase実行時にデータが存在しないエラーが発生した場合、404エラーとなること", func(t *testing.T) {
+	t.Run("準正常系 Usecase実行時にデータが存在しないエラーが発生した場合、404エラーとなること", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks/5", nil)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
@@ -101,15 +110,24 @@ func TestGetByID(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusNotFound, res.StatusCode)
+		assert.Equal(t, domain.ErrorResponse{Message: domain.ErrRecordNotFound.Error()}, resError)
 	})
 
 	t.Run("異常系 Usecase実行時に想定外のエラーが発生した場合、500エラーとなること", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks/5", nil)
 		w := httptest.NewRecorder()
+		mockErr := errors.New("test error")
 		mockUsecase := &mock.MockTaskUsecase{
 			MockGetByID: func(ctx context.Context, id int64) (domain.Task, error) {
-				return domain.Task{}, errors.New("test error")
+				return domain.Task{}, mockErr
 			},
 		}
 		handler := task.NewTaskHandler(mockUsecase)
@@ -117,7 +135,15 @@ func TestGetByID(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+		assert.Equal(t, domain.ErrorResponse{Message: mockErr.Error()}, resError)
 	})
 }
 
@@ -166,7 +192,15 @@ func TestUpdate(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
 
 	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
@@ -188,7 +222,15 @@ func TestUpdate(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
 
 	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
@@ -201,10 +243,11 @@ func TestUpdate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
 			bytes.NewBuffer(byteTask),
 		)
+		mockErr := errors.New("test error")
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockUpdate: func(ctx context.Context, task domain.Task) error {
-				return errors.New("test error")
+				return mockErr
 			},
 		}
 		handler := task.NewTaskHandler(mockUsecase)
@@ -212,7 +255,15 @@ func TestUpdate(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+		assert.Equal(t, domain.ErrorResponse{Message: mockErr.Error()}, resError)
 	})
 }
 
@@ -236,9 +287,10 @@ func TestDelete(t *testing.T) {
 	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodDelete, "http://example.com/tasks/5", nil)
 		w := httptest.NewRecorder()
+		mockErr := errors.New("test error")
 		mockUsecase := &mock.MockTaskUsecase{
 			MockDelete: func(ctx context.Context, id int64) error {
-				return errors.New("test error")
+				return mockErr
 			},
 		}
 		handler := task.NewTaskHandler(mockUsecase)
@@ -246,6 +298,14 @@ func TestDelete(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+		assert.Equal(t, domain.ErrorResponse{Message: mockErr.Error()}, resError)
 	})
 }

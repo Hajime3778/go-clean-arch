@@ -46,6 +46,7 @@ func TestFindByIDTest(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 	})
+
 	t.Run("準正常系 パラメータが指定されていない場合、400エラーとなること", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks", nil)
 		w := httptest.NewRecorder()
@@ -59,8 +60,17 @@ func TestFindByIDTest(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
+
 	t.Run("準正常系 limitが数字でない場合、400エラーとなること", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks?limit=foo&offset=0", nil)
 		w := httptest.NewRecorder()
@@ -74,8 +84,17 @@ func TestFindByIDTest(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
+
 	t.Run("準正常系 offsetが数字でない場合、400エラーとなること", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks?limit=0&offset=foo", nil)
 		w := httptest.NewRecorder()
@@ -89,14 +108,24 @@ func TestFindByIDTest(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
+
 	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks?limit=0&offset=0", nil)
 		w := httptest.NewRecorder()
+		mockErr := errors.New("test error")
 		mockUsecase := &mock.MockTaskUsecase{
 			MockFindByUserID: func(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
-				return nil, errors.New("test error")
+				return nil, mockErr
 			},
 		}
 		handler := task.NewTaskIndexHandler(mockUsecase)
@@ -104,7 +133,15 @@ func TestFindByIDTest(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+		assert.Equal(t, domain.ErrorResponse{Message: mockErr.Error()}, resError)
 	})
 }
 
@@ -153,7 +190,15 @@ func TestCreate(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
 
 	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
@@ -175,7 +220,15 @@ func TestCreate(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
 
 	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
@@ -199,6 +252,14 @@ func TestCreate(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err := decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
 }
