@@ -416,7 +416,70 @@ func TestUpdate(t *testing.T) {
 	})
 }
 
-func TestDelete(t *testing.T) {}
+func TestDelete(t *testing.T) {
+	t.Run("正常系 1件削除し結果が正しいこと", func(t *testing.T) {
+		ctx := context.TODO()
+		userID, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		createdTasks, err := createTasks(1, userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		createdTask := createdTasks[0]
+
+		req, _ := http.NewRequest("DELETE", taskURL+"/"+strconv.Itoa(int(createdTask.ID)), nil)
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		repo := taskRepository.NewTaskRepository(sqlDriver)
+		_, err = repo.GetByID(ctx, createdTask.ID)
+		if err == nil {
+			t.Fatal("エラーが起きていない場合失敗")
+		}
+		assert.Equal(t, http.StatusNoContent, response.StatusCode)
+		assert.Equal(t, domain.ErrRecordNotFound, err)
+	})
+
+	t.Run("正常系 存在しないIDを指定した際にエラーとならないこと(204が返却されること)", func(t *testing.T) {
+		taskID := time.Now().UnixNano()
+
+		req, _ := http.NewRequest("DELETE", taskURL+"/"+strconv.Itoa(int(taskID)), nil)
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		assert.Equal(t, http.StatusNoContent, response.StatusCode)
+	})
+
+	t.Run("準正常系 指定されたIDが数字でない場合、400エラーとなること", func(t *testing.T) {
+		req, _ := http.NewRequest("DELETE", taskURL+"/hoge", nil)
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
+	})
+}
 
 // createUser テストユーザーを作成し、ユーザーIDを返却します
 func createUser(ctx context.Context) (int64, error) {
