@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 
@@ -31,11 +32,16 @@ func NewSqlConnenction() database.SqlDriver {
 	connStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
 	val := url.Values{}
 	val.Add("parseTime", "1")
+	val.Add("loc", "Asia/Tokyo")
 	dsn := fmt.Sprintf("%s?%s", connStr, val.Encode())
 
 	conn, err := sql.Open(`mysql`, dsn)
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err)
+	}
+	err = conn.Ping()
+	if err != nil {
+		log.Fatalf("mysql connect failed: '%s'", err)
 	}
 	return &SqlDriver{conn}
 }

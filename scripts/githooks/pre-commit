@@ -11,5 +11,4 @@ echo "lint failed"
   exit 1
 fi
 
-git add .
 echo "lint finish"

@@ -24,6 +24,27 @@ func (u *userRepository) FetchByEmailAndPassword(ctx context.Context, email stri
 	panic("not implemented") // TODO: Implement
 }
 
-func (u *userRepository) Create(ctx context.Context, task domain.Task) error {
+func (ur *userRepository) Create(ctx context.Context, user domain.User) (int64, error) {
+	query := `
+		INSERT INTO users(name,email,password,salt) VALUES(?,?,?,?)
+	`
+	result, err := ur.SqlDriver.ExecuteContext(ctx, query, user.Name, user.Email, user.Password, user.Salt)
+	if err != nil {
+		return 0, err
+	}
+
+	createdId, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return createdId, nil
+}
+
+func (ur *userRepository) Update(ctx context.Context, user domain.User) error {
+	panic("not implemented") // TODO: Implement
+}
+
+func (ur *userRepository) Delete(ctx context.Context, id int64) error {
 	panic("not implemented") // TODO: Implement
 }
