@@ -17,13 +17,56 @@ func NewTaskRepository(sqlDriver database.SqlDriver) TaskRepository {
 	return &taskRepository{sqlDriver}
 }
 
-// NewTaskUsecase タスクを指定した範囲まで取得します
-func (tr *taskRepository) Fetch(ctx context.Context, cursor string, num int64) (res []domain.Task, nextCursor string, err error) {
-	panic("not implemented") // TODO: Implement
+// FindByUserID タスクをユーザーIDで複数件取得します
+func (tr *taskRepository) FindByUserID(ctx context.Context, userID int64, limit int64, offset int64) ([]domain.Task, error) {
+	query := `
+		SELECT
+			*
+		FROM
+			tasks
+		WHERE
+			user_id = ?
+		ORDER BY
+			due_date
+		LIMIT ? OFFSET ?
+	`
+
+	rows, err := tr.SqlDriver.QueryContext(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}()
+
+	tasks := make([]domain.Task, 0)
+	for rows.Next() {
+		task := domain.Task{}
+		err = rows.Scan(
+			&task.ID,
+			&task.UserID,
+			&task.Title,
+			&task.Content,
+			&task.DueDate,
+			&task.UpdatedAt,
+			&task.CreatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	return tasks, nil
 }
 
-// FetchByID IDでタスクを1件取得します
-func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (task domain.Task, err error) {
+// GetByID IDでタスクを1件取得します
+func (tr *taskRepository) GetByID(ctx context.Context, id int64) (domain.Task, error) {
 	query := `
 		SELECT 
 			* 
@@ -31,8 +74,6 @@ func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (task domain.
 			tasks
 		WHERE 
 			id = ?
-		ORDER BY id 
-		LIMIT 1
 	`
 	rows, err := tr.SqlDriver.QueryContext(ctx, query, id)
 	if err != nil {
@@ -50,6 +91,7 @@ func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (task domain.
 		return domain.Task{}, domain.ErrRecordNotFound
 	}
 
+	task := domain.Task{}
 	err = rows.Scan(
 		&task.ID,
 		&task.UserID,
@@ -68,16 +110,21 @@ func (tr *taskRepository) FetchByID(ctx context.Context, id int64) (task domain.
 }
 
 // Create タスクを1件作成します
-func (tr *taskRepository) Create(ctx context.Context, task domain.Task) error {
+func (tr *taskRepository) Create(ctx context.Context, task domain.Task) (int64, error) {
 	query := `
 		INSERT INTO tasks(user_id,title,content,due_date) VALUES(?,?,?,?)
 	`
-	_, err := tr.SqlDriver.ExecuteContext(ctx, query, task.UserID, task.Title, task.Content, task.DueDate)
+	result, err := tr.SqlDriver.ExecuteContext(ctx, query, task.UserID, task.Title, task.Content, task.DueDate)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	createdId, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return createdId, nil
 }
 
 // Update IDでタスクを1件更新します

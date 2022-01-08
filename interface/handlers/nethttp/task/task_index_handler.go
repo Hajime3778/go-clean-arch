@@ -3,10 +3,12 @@ package task
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
+	httpUtil "github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp"
 	usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
 )
 
@@ -26,12 +28,39 @@ func (t *taskIndexHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	switch r.Method {
 	case http.MethodGet:
-		fmt.Println("fetch all tasks")
+		t.findByUserID(ctx, w, r)
 	case http.MethodPost:
 		t.create(ctx, w, r)
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}
+}
+
+func (t *taskIndexHandler) findByUserID(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	q, _ := url.Parse(r.RequestURI)
+	query := q.Query()
+
+	strLimit := query.Get("limit")
+	strOffset := query.Get("offset")
+
+	limit, err := strconv.ParseInt(strLimit, 10, 64)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+	offset, err := strconv.ParseInt(strOffset, 10, 64)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	tasks, err := t.taskUsecase.FindByUserID(ctx, limit, offset)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, httpUtil.GetStatusCode(err), domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	httpUtil.WriteJSONResponse(w, http.StatusOK, tasks)
 }
 
 func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -40,18 +69,17 @@ func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r 
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(&requestTask)
 	if err != nil {
-		writeJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 		return
 	}
 
 	var ok bool
 	if ok, err = requestTask.IsCreateRequestValid(); !ok {
-		writeJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
+		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 		return
 	}
 
 	task := domain.Task{
-		UserID:  1, // TODO: トークンから取得するようにする
 		Title:   requestTask.Title,
 		Content: requestTask.Content,
 		DueDate: requestTask.DueDate,
@@ -59,7 +87,7 @@ func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r 
 
 	err = t.taskUsecase.Create(ctx, task)
 	if err != nil {
-		writeJSONResponse(w, getStatusCode(err), domain.ErrorResponse{Message: err.Error()})
+		httpUtil.WriteJSONResponse(w, httpUtil.GetStatusCode(err), domain.ErrorResponse{Message: err.Error()})
 		return
 	}
 

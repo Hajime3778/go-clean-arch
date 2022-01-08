@@ -1,7 +1,7 @@
 -- users
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
-  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL DEFAULT '',
   `email` varchar(50) NOT NULL DEFAULT '',
   `password` varchar(200) NOT NULL DEFAULT '',
@@ -17,8 +17,8 @@ INSERT INTO `users` (`id`, `name`, `email`, `password`, `salt`) VALUES
 -- tasks
 DROP TABLE IF EXISTS `tasks`;
 CREATE TABLE `tasks` (
-  `id` int(10) NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) NOT NULL,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
   `title` varchar(50) NOT NULL DEFAULT '',
   `content` varchar(200) NOT NULL DEFAULT '',
   `due_date` datetime,
@@ -29,7 +29,7 @@ CREATE TABLE `tasks` (
   INDEX `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO `tasks` (`title`, `user_id`, `content`, `due_date`) VALUES
-('お米を炊く', 1, '買い出しに帰ってくる頃に炊けるようにセットしておく', '2021-12-05 20:30:09'),
-('買い出しに行く', 1,'スーパーで、卵と鶏肉と三葉を買う', '2021-12-05 20:30:09'),
-('晩御飯を作る', 1,'親子丼を作る', '2021-12-05 20:30:09'),
-('お風呂に入る', 1,'肩まで浸かって10数えよう', '2021-12-05 20:30:09');
+('お米を炊く', 1, '買い出しに帰ってくる頃に炊けるようにセットしておく', '2021-12-05 20:30:00'),
+('買い出しに行く', 1,'スーパーで、卵と鶏肉と三葉を買う', '2021-12-05 20:35:00'),
+('晩御飯を作る', 1,'親子丼を作る', '2021-12-05 20:40:00'),
+('お風呂に入る', 1,'肩まで浸かって10数えよう', '2021-12-05 20:45:00');

@@ -7,6 +7,12 @@ import (
 )
 
 // CreateTaskRequest: タスク追加時のリクエスト
+type FindByUserIDTaskRequest struct {
+	Limit  int64 `json:"limit" validate:"required"`
+	Offset int64 `json:"offset" validate:"required"`
+}
+
+// CreateTaskRequest: タスク追加時のリクエスト
 type CreateTaskRequest struct {
 	Title   string    `json:"title" validate:"required"`
 	Content string    `json:"content" validate:"required"`
