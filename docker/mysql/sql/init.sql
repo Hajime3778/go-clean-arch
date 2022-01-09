@@ -9,7 +9,7 @@ CREATE TABLE `users` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  INDEX `idx_email` (`email`)
+  UNIQUE INDEX `idx_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `salt`) VALUES
 (1, 'ユーザー１', 'sample@example.com', 'password', 'salt');

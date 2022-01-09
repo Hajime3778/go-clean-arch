@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"sort"
@@ -483,10 +484,11 @@ func TestDelete(t *testing.T) {
 
 // createUser テストユーザーを作成し、ユーザーIDを返却します
 func createUser(ctx context.Context) (int64, error) {
+	email := fmt.Sprintf("%d@example.com", time.Now().UnixNano())
 	userRepo := userRepository.NewUserRepository(sqlDriver)
 	user := domain.User{
 		Name:     "test user",
-		Email:    "test@example.com",
+		Email:    email,
 		Password: "test passsword",
 		Salt:     "test salt",
 	}

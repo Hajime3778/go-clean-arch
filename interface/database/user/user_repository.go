@@ -16,11 +16,11 @@ func NewUserRepository(sqlDriver database.SqlDriver) UserRepository {
 	return &userRepository{sqlDriver}
 }
 
-func (u *userRepository) GetByID(ctx context.Context, id int64) {
+func (u *userRepository) GetByID(ctx context.Context, id int64) (domain.User, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (u *userRepository) GetByEmailAndPassword(ctx context.Context, email string, password string) {
+func (u *userRepository) GetByEmailAndPassword(ctx context.Context, email string, password string) (domain.User, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -39,12 +39,4 @@ func (ur *userRepository) Create(ctx context.Context, user domain.User) (int64, 
 	}
 
 	return createdId, nil
-}
-
-func (ur *userRepository) Update(ctx context.Context, user domain.User) error {
-	panic("not implemented") // TODO: Implement
-}
-
-func (ur *userRepository) Delete(ctx context.Context, id int64) error {
-	panic("not implemented") // TODO: Implement
 }
