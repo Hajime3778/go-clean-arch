@@ -20,7 +20,7 @@ func (u *userRepository) GetByID(ctx context.Context, id int64) (domain.User, er
 	panic("not implemented") // TODO: Implement
 }
 
-func (u *userRepository) GetByEmailAndPassword(ctx context.Context, email string, password string) (domain.User, error) {
+func (u *userRepository) GetByEmail(ctx context.Context, email string) (domain.User, error) {
 	panic("not implemented") // TODO: Implement
 }
 
