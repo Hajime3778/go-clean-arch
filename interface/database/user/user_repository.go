@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"log"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
 	"github.com/Hajime3778/go-clean-arch/interface/database"
@@ -16,12 +17,90 @@ func NewUserRepository(sqlDriver database.SqlDriver) UserRepository {
 	return &userRepository{sqlDriver}
 }
 
-func (u *userRepository) GetByID(ctx context.Context, id int64) (domain.User, error) {
-	panic("not implemented") // TODO: Implement
+func (ur *userRepository) GetByID(ctx context.Context, id int64) (domain.User, error) {
+	query := `
+		SELECT 
+			* 
+		FROM 
+			users
+		WHERE 
+			id = ?
+	`
+	rows, err := ur.SqlDriver.QueryContext(ctx, query, id)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}()
+
+	if !rows.Next() {
+		return domain.User{}, domain.ErrRecordNotFound
+	}
+
+	user := domain.User{}
+	err = rows.Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Salt,
+		&user.UpdatedAt,
+		&user.CreatedAt,
+	)
+
+	if err != nil {
+		return user, err
+	}
+
+	return user, nil
 }
 
-func (u *userRepository) GetByEmail(ctx context.Context, email string) (domain.User, error) {
-	panic("not implemented") // TODO: Implement
+func (ur *userRepository) GetByEmail(ctx context.Context, email string) (domain.User, error) {
+	query := `
+		SELECT 
+			* 
+		FROM 
+			users
+		WHERE 
+			email = ?
+	`
+	rows, err := ur.SqlDriver.QueryContext(ctx, query, email)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}()
+
+	if !rows.Next() {
+		return domain.User{}, domain.ErrRecordNotFound
+	}
+
+	user := domain.User{}
+	err = rows.Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Salt,
+		&user.UpdatedAt,
+		&user.CreatedAt,
+	)
+
+	if err != nil {
+		return user, err
+	}
+
+	return user, nil
 }
 
 func (ur *userRepository) Create(ctx context.Context, user domain.User) (int64, error) {
