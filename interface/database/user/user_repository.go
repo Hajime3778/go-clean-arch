@@ -16,11 +16,11 @@ func NewUserRepository(sqlDriver database.SqlDriver) UserRepository {
 	return &userRepository{sqlDriver}
 }
 
-func (u *userRepository) FetchByID(ctx context.Context, id int64) {
+func (u *userRepository) GetByID(ctx context.Context, id int64) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (u *userRepository) FetchByEmailAndPassword(ctx context.Context, email string, password string) {
+func (u *userRepository) GetByEmailAndPassword(ctx context.Context, email string, password string) {
 	panic("not implemented") // TODO: Implement
 }
 
