@@ -7,27 +7,33 @@ import (
 	"time"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
-	"github.com/Hajime3778/go-clean-arch/interface/database/user/mock"
+	"github.com/Hajime3778/go-clean-arch/infrastructure/database"
+	"github.com/Hajime3778/go-clean-arch/infrastructure/env"
+	userRepository "github.com/Hajime3778/go-clean-arch/interface/database/user"
 	usecase "github.com/Hajime3778/go-clean-arch/usecase/auth"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSignUpCreate(t *testing.T) {
+	env.NewEnv().LoadEnvFile("../../.env")
+	sqlDriver := database.NewSqlConnenction()
+	userRepo := userRepository.NewUserRepository(sqlDriver)
+
 	mockUser := domain.User{
 		Name:      "test user",
-		Email:     "test email",
-		Password:  generateRandomEmail(),
-		Salt:      "salt",
+		Email:     generateRandomEmail(),
+		Password:  "test password",
 		CreatedAt: time.Time{},
 		UpdatedAt: time.Time{},
 	}
 
-	mockUserRepo := &mock.MockUserRepo{
-		MockCreate: func(context.Context, domain.User) (int64, error) {
-			return int64(1), nil
-		},
-	}
-	userUsecase := usecase.NewAuthUsecase(mockUserRepo)
+	// mockUserRepo := &mock.MockUserRepo{
+	// 	MockCreate: func(context.Context, domain.User) (int64, error) {
+	// 		return int64(1), nil
+	// 	},
+	// }
+
+	userUsecase := usecase.NewAuthUsecase(userRepo)
 	token, err := userUsecase.SignUp(context.TODO(), mockUser)
 	if err != nil {
 		t.Fatal(err)

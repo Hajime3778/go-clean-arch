@@ -2,9 +2,11 @@ package auth
 
 import (
 	"context"
+	"math/rand"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
 	repository "github.com/Hajime3778/go-clean-arch/interface/database/user"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type authUsecase struct {
@@ -18,7 +20,31 @@ func NewAuthUsecase(repo repository.UserRepository) AuthUsecase {
 
 // SignUp ユーザーのサインアップを行います
 func (u *authUsecase) SignUp(ctx context.Context, user domain.User) (token string, err error) {
-	panic("not implemented") // TODO: Implement
+	// bcryptはsaltを内包しているので、saltを付与する必要はないのですが
+	// salt機能がないライブラリも多いので、自身の練習&参考用サンプルとしてsaltをつけてます。
+	// https://github.com/golang/crypto/blob/e495a2d5b3d3be43468d0ebb413f46eeaedf7eb3/bcrypt/bcrypt.go#L144
+	salt := generateSalt()
+	password := []byte(user.Password + salt)
+	hashed, _ := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
+
+	user.Password = string(hashed)
+	user.Salt = salt
+
+	_, err = u.repo.Create(ctx, user)
+	if err != nil {
+		return "", err
+	}
+
+	// TODO: password検証はこうする！
+	// err = bcrypt.CompareHashAndPassword(hashed, password)
+	// if err == bcrypt.ErrMismatchedHashAndPassword {
+	// 	return "", domain.ErrMismatchedPassword
+	// }
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	return "", nil
 }
 
 // SignIn ユーザーのサインインを行います
@@ -29,4 +55,15 @@ func (u *authUsecase) SignIn(ctx context.Context, email string, password string)
 // VerifyAccessToken アクセストークンの検証を行います
 func (u *authUsecase) VerifyAccessToken(ctx context.Context, token string) (bool, error) {
 	panic("not implemented") // TODO: Implement
+}
+
+// generateSalt Saltを作成します(10桁のランダム文字列)
+func generateSalt() string {
+	var letter = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+	b := make([]rune, 10)
+	for i := range b {
+		b[i] = letter[rand.Intn(len(letter))]
+	}
+	return string(b)
 }

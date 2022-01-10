@@ -6,6 +6,7 @@ var (
 	ErrInternalServerError = errors.New("internal server error")
 	ErrRecordNotFound      = errors.New("record not found")
 	ErrBadRequest          = errors.New("bad request")
+	ErrMismatchedPassword  = errors.New("mismatched password")
 )
 
 type ErrorResponse struct {
