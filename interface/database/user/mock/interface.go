@@ -11,7 +11,7 @@ type MockUserRepo struct {
 	repo.UserRepository
 	MockGetByID    func(ctx context.Context, id int64) (domain.User, error)
 	MockGetByEmail func(ctx context.Context, email string) (domain.User, error)
-	MockCreate     func(ctx context.Context, task domain.User) (int64, error)
+	MockCreate     func(ctx context.Context, user domain.User) (int64, error)
 }
 
 func (m *MockUserRepo) GetByID(ctx context.Context, id int64) (domain.User, error) {
