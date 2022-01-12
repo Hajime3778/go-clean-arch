@@ -2,10 +2,13 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
+	"time"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
 	repository "github.com/Hajime3778/go-clean-arch/interface/database/user"
+	jwt "github.com/form3tech-oss/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,12 +33,15 @@ func (u *authUsecase) SignUp(ctx context.Context, user domain.User) (token strin
 	user.Password = string(hashed)
 	user.Salt = salt
 
-	_, err = u.repo.Create(ctx, user)
+	userID, err := u.repo.Create(ctx, user)
 	if err != nil {
 		return "", err
 	}
+	user.ID = userID
 
-	return "token", nil
+	token = GenerateAccessToken(user)
+
+	return token, nil
 }
 
 // SignIn ユーザーのサインインを行います
@@ -52,12 +58,28 @@ func (u *authUsecase) SignIn(ctx context.Context, email string, password string)
 	if err != nil {
 		return "", err
 	}
-	return "token", err
+	token := GenerateAccessToken(user)
+	return token, err
 }
 
 // VerifyAccessToken アクセストークンの検証を行います
 func (u *authUsecase) VerifyAccessToken(ctx context.Context, token string) (bool, error) {
 	panic("not implemented") // TODO: Implement
+}
+
+func GenerateAccessToken(user domain.User) string {
+	// headerのセット
+	token := jwt.New(jwt.SigningMethodHS256)
+
+	// claimsのセット
+	claims := token.Claims.(jwt.MapClaims)
+	claims["user_id"] = fmt.Sprint(user.ID)
+	claims["name"] = user.Name
+	claims["expires_at"] = time.Now().Add(time.Hour * 24).Unix()
+
+	// 電子署名
+	tokenString, _ := token.SignedString([]byte("TODO: secret-key"))
+	return tokenString
 }
 
 // generateSalt Saltを作成します(10桁のランダム文字列)
@@ -70,3 +92,9 @@ func generateSalt() string {
 	}
 	return string(b)
 }
+
+// type jwtCustomClaims struct {
+// 	UserID int64  `json:"user_id"`
+// 	Name   string `json:"name"`
+// 	jwt.StandardClaims
+// }
