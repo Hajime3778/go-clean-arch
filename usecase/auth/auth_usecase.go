@@ -35,21 +35,24 @@ func (u *authUsecase) SignUp(ctx context.Context, user domain.User) (token strin
 		return "", err
 	}
 
-	// TODO: password検証はこうする！
-	// err = bcrypt.CompareHashAndPassword(hashed, password)
-	// if err == bcrypt.ErrMismatchedHashAndPassword {
-	// 	return "", domain.ErrMismatchedPassword
-	// }
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	return "", nil
+	return "token", nil
 }
 
 // SignIn ユーザーのサインインを行います
-func (u *authUsecase) SignIn(ctx context.Context, email string, password string) (token string, err error) {
-	panic("not implemented") // TODO: Implement
+func (u *authUsecase) SignIn(ctx context.Context, email string, password string) (string, error) {
+	user, err := u.repo.GetByEmail(ctx, email)
+	if err != nil {
+		return "", err
+	}
+	inputPassword := []byte(password + user.Salt)
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), inputPassword)
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		return "", domain.ErrMismatchedPassword
+	}
+	if err != nil {
+		return "", err
+	}
+	return "token", err
 }
 
 // VerifyAccessToken アクセストークンの検証を行います

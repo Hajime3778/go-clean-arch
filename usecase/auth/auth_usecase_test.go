@@ -32,9 +32,16 @@ func TestSignUpCreate(t *testing.T) {
 	// 		return int64(1), nil
 	// 	},
 	// }
+	ctx := context.TODO()
 
 	userUsecase := usecase.NewAuthUsecase(userRepo)
-	token, err := userUsecase.SignUp(context.TODO(), mockUser)
+	token, err := userUsecase.SignUp(ctx, mockUser)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotEmpty(t, token)
+
+	token, err = userUsecase.SignIn(ctx, mockUser.Email, mockUser.Password)
 	if err != nil {
 		t.Fatal(err)
 	}
