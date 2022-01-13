@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -53,12 +54,11 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 
 // GetByID IDでタスクを1件取得します
 func (t *taskHandler) getByID(ctx context.Context, w http.ResponseWriter, r *http.Request, id int64) {
-
 	/*
 	   署名の検証
 	*/
 	token, err := request.ParseFromRequest(r, request.OAuth2Extractor, func(token *jwt.Token) (interface{}, error) {
-		b := []byte("TODO: secret-key")
+		b := []byte(os.Getenv("SECRET_KEY"))
 		return b, nil
 	})
 

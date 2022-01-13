@@ -3,6 +3,7 @@ package auth_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -14,8 +15,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSignUpCreate(t *testing.T) {
+func TestMain(m *testing.M) {
 	env.NewEnv().LoadEnvFile("../../.env")
+	exitVal := m.Run()
+	os.Exit(exitVal)
+}
+
+func TestSignUpCreate(t *testing.T) {
 	sqlDriver := database.NewSqlConnenction()
 	userRepo := userRepository.NewUserRepository(sqlDriver)
 

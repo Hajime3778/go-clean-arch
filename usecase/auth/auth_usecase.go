@@ -2,8 +2,9 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"os"
 	"time"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
@@ -78,23 +79,20 @@ func GenerateAccessToken(user domain.User) string {
 	claims["expires_at"] = time.Now().Add(time.Hour * 24).Unix()
 
 	// 電子署名
-	tokenString, _ := token.SignedString([]byte("TODO: secret-key"))
+	tokenString, _ := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	return tokenString
 }
 
 // generateSalt Saltを作成します(10桁のランダム文字列)
 func generateSalt() string {
-	var letter = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-	b := make([]rune, 10)
-	for i := range b {
-		b[i] = letter[rand.Intn(len(letter))]
+	b := make([]byte, 10)
+	rand.Read(b)
+
+	var result string
+	for _, v := range b {
+		result += string(letters[int(v)%len(letters)])
 	}
-	return string(b)
+	return result
 }
-
-// type jwtCustomClaims struct {
-// 	UserID int64  `json:"user_id"`
-// 	Name   string `json:"name"`
-// 	jwt.StandardClaims
-// }
