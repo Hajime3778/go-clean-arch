@@ -3,6 +3,8 @@ package task
 import (
 	"context"
 
+	"github.com/Hajime3778/go-clean-arch/domain/constant"
+
 	"github.com/Hajime3778/go-clean-arch/domain"
 	repository "github.com/Hajime3778/go-clean-arch/interface/database/task"
 )
@@ -38,8 +40,7 @@ func (tu *taskUsecase) GetByID(ctx context.Context, id int64) (domain.Task, erro
 
 // Create タスクを1件作成します
 func (tu *taskUsecase) Create(ctx context.Context, task domain.Task) error {
-	// TODO: トークンから取得するように
-	userID := int64(1)
+	userID := ctx.Value(constant.UserIDContextKey).(int64)
 	task.UserID = userID
 	_, err := tu.repo.Create(ctx, task)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
+	"github.com/Hajime3778/go-clean-arch/domain/constant"
 	httpUtil "github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp"
 	usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
 )
@@ -64,10 +65,18 @@ func (t *taskIndexHandler) findByUserID(ctx context.Context, w http.ResponseWrit
 }
 
 func (t *taskIndexHandler) create(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	token, userID, err := httpUtil.VerifyAccessToken(r)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+	ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
+	ctx = context.WithValue(ctx, constant.AuthTokenContextKey, token)
+
 	var requestTask CreateTaskRequest
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	err := decoder.Decode(&requestTask)
+	err = decoder.Decode(&requestTask)
 	if err != nil {
 		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 		return

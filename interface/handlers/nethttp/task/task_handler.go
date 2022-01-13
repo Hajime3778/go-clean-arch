@@ -3,18 +3,14 @@ package task
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
 	httpUtil "github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp"
 	usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
-	"github.com/form3tech-oss/jwt-go"
-	"github.com/form3tech-oss/jwt-go/request"
 )
 
 const TaskPath string = "/tasks/"
@@ -54,24 +50,6 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 
 // GetByID IDでタスクを1件取得します
 func (t *taskHandler) getByID(ctx context.Context, w http.ResponseWriter, r *http.Request, id int64) {
-	/*
-	   署名の検証
-	*/
-	token, err := request.ParseFromRequest(r, request.OAuth2Extractor, func(token *jwt.Token) (interface{}, error) {
-		b := []byte(os.Getenv("SECRET_KEY"))
-		return b, nil
-	})
-
-	if err != nil {
-		httpUtil.WriteJSONResponse(w, http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
-		return
-	}
-
-	claims := token.Claims.(jwt.MapClaims)
-	strUserID := claims["user_id"].(string)
-	userID, _ := strconv.ParseInt(strUserID, 10, 64)
-	fmt.Println(userID)
-
 	task, err := t.taskUsecase.GetByID(ctx, id)
 	if err != nil {
 		httpUtil.WriteJSONResponse(w, httpUtil.GetStatusCode(err), domain.ErrorResponse{Message: err.Error()})

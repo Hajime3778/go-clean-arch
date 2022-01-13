@@ -68,6 +68,7 @@ func (u *authUsecase) VerifyAccessToken(ctx context.Context, token string) (bool
 	panic("not implemented") // TODO: Implement
 }
 
+// GenerateAccessToken アクセストークンを発行します
 func GenerateAccessToken(user domain.User) string {
 	// headerのセット
 	token := jwt.New(jwt.SigningMethodHS256)

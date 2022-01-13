@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
+	"github.com/form3tech-oss/jwt-go"
+	"github.com/form3tech-oss/jwt-go/request"
 )
 
 // WriteJSONResponse JSON形式でレスポンスを出力します
@@ -38,4 +42,22 @@ func GetStatusCode(err error) int {
 	default:
 		return http.StatusInternalServerError
 	}
+}
+
+// VerifyAccessToken アクセストークン署名を検証し、トークンとUserIDを返却します。
+func VerifyAccessToken(r *http.Request) (string, int64, error) {
+	token, err := request.ParseFromRequest(r, request.OAuth2Extractor, func(token *jwt.Token) (interface{}, error) {
+		b := []byte(os.Getenv("SECRET_KEY"))
+		return b, nil
+	})
+
+	if err != nil {
+		return "", 0, err
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	strUserID := claims["user_id"].(string)
+	userID, _ := strconv.ParseInt(strUserID, 10, 64)
+
+	return token.Raw, userID, nil
 }
