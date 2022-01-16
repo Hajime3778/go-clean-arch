@@ -28,7 +28,7 @@ func (e *Env) Init() {
 	}
 
 	// ローカル環境
-	e.LoadEnvFile(".env")
+	e.LoadEnvFile("../../.env")
 }
 
 // Load: 環境変数の読み込み
