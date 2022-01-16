@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"crypto/rand"
-	"fmt"
 	"os"
 	"time"
 
@@ -20,6 +19,12 @@ type authUsecase struct {
 // NewAuthUsecase タスク機能のUsecaseオブジェクトを作成します
 func NewAuthUsecase(repo repository.UserRepository) AuthUsecase {
 	return &authUsecase{repo}
+}
+
+type CustomClaims struct {
+	UserID   int64  `json:"user_id"`
+	UserName string `json:"name"`
+	jwt.StandardClaims
 }
 
 // SignUp ユーザーのサインアップを行います
@@ -63,23 +68,17 @@ func (u *authUsecase) SignIn(ctx context.Context, email string, password string)
 	return token, err
 }
 
-// VerifyAccessToken アクセストークンの検証を行います
-func (u *authUsecase) VerifyAccessToken(ctx context.Context, token string) (bool, error) {
-	panic("not implemented") // TODO: Implement
-}
-
 // GenerateAccessToken アクセストークンを発行します
 func GenerateAccessToken(user domain.User) string {
-	// headerのセット
-	token := jwt.New(jwt.SigningMethodHS256)
+	claims := CustomClaims{
+		user.ID,
+		user.Name,
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+		},
+	}
 
-	// claimsのセット
-	claims := token.Claims.(jwt.MapClaims)
-	claims["user_id"] = fmt.Sprint(user.ID)
-	claims["name"] = user.Name
-	claims["expires_at"] = time.Now().Add(time.Hour * 24).Unix()
-
-	// 電子署名
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, _ := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	return tokenString
 }
