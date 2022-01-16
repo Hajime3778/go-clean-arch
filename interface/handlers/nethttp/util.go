@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
 	"github.com/form3tech-oss/jwt-go"
@@ -39,6 +38,8 @@ func GetStatusCode(err error) int {
 		return http.StatusNotFound
 	case domain.ErrBadRequest:
 		return http.StatusBadRequest
+	case domain.ErrMismatchedPassword:
+		return http.StatusUnauthorized
 	default:
 		return http.StatusInternalServerError
 	}
@@ -46,7 +47,7 @@ func GetStatusCode(err error) int {
 
 // VerifyAccessToken アクセストークン署名を検証し、トークンとUserIDを返却します。
 func VerifyAccessToken(r *http.Request) (string, int64, error) {
-	token, err := request.ParseFromRequest(r, request.OAuth2Extractor, func(token *jwt.Token) (interface{}, error) {
+	token, err := request.ParseFromRequestWithClaims(r, request.OAuth2Extractor, &domain.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		b := []byte(os.Getenv("SECRET_KEY"))
 		return b, nil
 	})
@@ -55,9 +56,8 @@ func VerifyAccessToken(r *http.Request) (string, int64, error) {
 		return "", 0, err
 	}
 
-	claims := token.Claims.(jwt.MapClaims)
-	strUserID := claims["user_id"].(string)
-	userID, _ := strconv.ParseInt(strUserID, 10, 64)
+	claims := token.Claims.(*domain.Claims)
+	userID := claims.UserID
 
 	return token.Raw, userID, nil
 }

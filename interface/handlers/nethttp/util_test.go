@@ -6,15 +6,25 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
+	"github.com/Hajime3778/go-clean-arch/infrastructure/env"
 	"github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp"
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/stretchr/testify/assert"
 )
 
 type TestResponse struct {
 	Number json.Number `json:"number"`
+}
+
+func TestMain(m *testing.M) {
+	env.NewEnv().LoadEnvFile("../../../.env")
+	exitVal := m.Run()
+	os.Exit(exitVal)
 }
 
 func TestWriteJSONResponse(t *testing.T) {
@@ -63,6 +73,11 @@ func TestGetStatusCode(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, status)
 	})
 
+	t.Run("正常系 ErrErrMismatchedPasswordの場合、401が返却されること", func(t *testing.T) {
+		status := nethttp.GetStatusCode(domain.ErrMismatchedPassword)
+		assert.Equal(t, http.StatusUnauthorized, status)
+	})
+
 	t.Run("正常系 ErrRecordNotFoundの場合、404が返却されること", func(t *testing.T) {
 		status := nethttp.GetStatusCode(domain.ErrRecordNotFound)
 		assert.Equal(t, http.StatusNotFound, status)
@@ -71,5 +86,38 @@ func TestGetStatusCode(t *testing.T) {
 	t.Run("正常系 ErrInternalServerErrorの場合、500が返却されること", func(t *testing.T) {
 		status := nethttp.GetStatusCode(domain.ErrInternalServerError)
 		assert.Equal(t, http.StatusInternalServerError, status)
+	})
+}
+
+func TestVerifyAccessToken(t *testing.T) {
+	t.Run("正常系", func(t *testing.T) {
+		claims := domain.Claims{
+			UserID:   1,
+			UserName: "test name",
+			StandardClaims: jwt.StandardClaims{
+				ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+			},
+		}
+
+		tokenString, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(os.Getenv("SECRET_KEY")))
+		r := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
+		r.Header.Add("Authorization", tokenString)
+
+		token, userID, err := nethttp.VerifyAccessToken(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, tokenString, token)
+		assert.Equal(t, claims.UserID, userID)
+	})
+
+	t.Run("異常系 トークンが設定されていない場合エラーとなること", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
+		r.Header.Add("Authorization", "")
+
+		token, userID, err := nethttp.VerifyAccessToken(r)
+		assert.NotEmpty(t, err)
+		assert.Empty(t, token)
+		assert.Equal(t, int64(0), userID)
 	})
 }

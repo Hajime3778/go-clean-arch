@@ -39,12 +39,12 @@ func TestSignUp(t *testing.T) {
 		}
 		authUsecase := usecase.NewAuthUsecase(mockUserRepo)
 		tokenString, err := authUsecase.SignUp(context.TODO(), mockUser)
-		token, _ := jwt.ParseWithClaims(tokenString, &usecase.CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		token, _ := jwt.ParseWithClaims(tokenString, &domain.Claims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte(os.Getenv("SECRET_KEY")), nil
 		})
 
 		assert.NoError(t, err)
-		claims := token.Claims.(*usecase.CustomClaims)
+		claims := token.Claims.(*domain.Claims)
 		assert.Equal(t, createdUserID, claims.UserID)
 		assert.Equal(t, mockUser.Name, claims.UserName)
 	})
@@ -87,13 +87,14 @@ func TestSignIn(t *testing.T) {
 		tokenString, err := authUsecase.SignIn(context.TODO(), mockUser.Email, password)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tokenString)
-		token, _ := jwt.ParseWithClaims(tokenString, &usecase.CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		token, _ := jwt.ParseWithClaims(tokenString, &domain.Claims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte(os.Getenv("SECRET_KEY")), nil
 		})
-		claims := token.Claims.(*usecase.CustomClaims)
+		claims := token.Claims.(*domain.Claims)
 		assert.Equal(t, mockUser.ID, claims.UserID)
 		assert.Equal(t, mockUser.Name, claims.UserName)
 	})
+
 	t.Run("準正常系 パスワードが間違っている場合、ErrMismatchedPasswordエラーとなること", func(t *testing.T) {
 		password := "test password"
 		salt := "salt"
@@ -117,6 +118,7 @@ func TestSignIn(t *testing.T) {
 		assert.Equal(t, domain.ErrMismatchedPassword, err)
 		assert.Empty(t, tokenString)
 	})
+
 	t.Run("準正常系 Repositoryで取得したパスワードがハッシュ文字列でない場合エラーとなること", func(t *testing.T) {
 		mockUser := domain.User{
 			ID:        1,
@@ -137,6 +139,7 @@ func TestSignIn(t *testing.T) {
 		assert.NotEmpty(t, err)
 		assert.Empty(t, tokenString)
 	})
+
 	t.Run("異常系 Repository実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
 		mockUserRepo := &mock.MockUserRepo{
 			MockGetByEmail: func(ctx context.Context, email string) (domain.User, error) {

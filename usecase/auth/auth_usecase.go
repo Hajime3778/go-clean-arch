@@ -21,12 +21,6 @@ func NewAuthUsecase(repo repository.UserRepository) AuthUsecase {
 	return &authUsecase{repo}
 }
 
-type CustomClaims struct {
-	UserID   int64  `json:"user_id"`
-	UserName string `json:"name"`
-	jwt.StandardClaims
-}
-
 // SignUp ユーザーのサインアップを行います
 func (u *authUsecase) SignUp(ctx context.Context, user domain.User) (token string, err error) {
 	// bcryptはsaltを内包しているので、saltを付与する必要はないのですが
@@ -70,10 +64,10 @@ func (u *authUsecase) SignIn(ctx context.Context, email string, password string)
 
 // GenerateAccessToken アクセストークンを発行します
 func GenerateAccessToken(user domain.User) string {
-	claims := CustomClaims{
-		user.ID,
-		user.Name,
-		jwt.StandardClaims{
+	claims := domain.Claims{
+		UserID:   user.ID,
+		UserName: user.Name,
+		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
 		},
 	}
