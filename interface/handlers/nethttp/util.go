@@ -38,7 +38,7 @@ func GetStatusCode(err error) int {
 		return http.StatusNotFound
 	case domain.ErrBadRequest:
 		return http.StatusBadRequest
-	case domain.ErrMismatchedPassword:
+	case domain.ErrFailedSignIn:
 		return http.StatusUnauthorized
 	default:
 		return http.StatusInternalServerError

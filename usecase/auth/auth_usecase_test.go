@@ -26,6 +26,9 @@ func TestSignUp(t *testing.T) {
 	t.Run("正常系 新規登録", func(t *testing.T) {
 		createdUserID := int64(1)
 		mockUserRepo := &mock.MockUserRepo{
+			MockGetByEmail: func(ctx context.Context, email string) (domain.User, error) {
+				return domain.User{}, domain.ErrRecordNotFound
+			},
 			MockCreate: func(ctx context.Context, user domain.User) (int64, error) {
 				return createdUserID, nil
 			},
@@ -49,8 +52,43 @@ func TestSignUp(t *testing.T) {
 		assert.Equal(t, mockUser.Name, claims.UserName)
 	})
 
-	t.Run("異常系 Repository実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+	t.Run("異常系 指定されたEmailがすでに存在する場合、ErrExistEmailエラーとなること", func(t *testing.T) {
 		mockUserRepo := &mock.MockUserRepo{
+			MockGetByEmail: func(ctx context.Context, email string) (domain.User, error) {
+				return domain.User{}, nil
+			},
+			MockCreate: func(ctx context.Context, task domain.User) (int64, error) {
+				return 1, nil
+			},
+		}
+		authUsecase := usecase.NewAuthUsecase(mockUserRepo)
+		token, err := authUsecase.SignUp(context.TODO(), domain.User{})
+
+		assert.Equal(t, domain.ErrExistEmail, err)
+		assert.Empty(t, token)
+	})
+
+	t.Run("異常系 DBからユーザー取得実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		mockUserRepo := &mock.MockUserRepo{
+			MockGetByEmail: func(ctx context.Context, email string) (domain.User, error) {
+				return domain.User{}, domain.ErrInternalServerError
+			},
+			MockCreate: func(ctx context.Context, task domain.User) (int64, error) {
+				return 1, nil
+			},
+		}
+		authUsecase := usecase.NewAuthUsecase(mockUserRepo)
+		token, err := authUsecase.SignUp(context.TODO(), domain.User{})
+
+		assert.Equal(t, domain.ErrInternalServerError, err)
+		assert.Empty(t, token)
+	})
+
+	t.Run("異常系 DBにユーザー登録実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		mockUserRepo := &mock.MockUserRepo{
+			MockGetByEmail: func(ctx context.Context, email string) (domain.User, error) {
+				return domain.User{}, domain.ErrRecordNotFound
+			},
 			MockCreate: func(ctx context.Context, task domain.User) (int64, error) {
 				return 0, domain.ErrInternalServerError
 			},
@@ -95,7 +133,31 @@ func TestSignIn(t *testing.T) {
 		assert.Equal(t, mockUser.Name, claims.UserName)
 	})
 
-	t.Run("準正常系 パスワードが間違っている場合、ErrMismatchedPasswordエラーとなること", func(t *testing.T) {
+	t.Run("準正常系 存在しないEmailの場合、ErrFailedSignInエラーとなること", func(t *testing.T) {
+		password := "test password"
+		salt := "salt"
+		hashed, _ := bcrypt.GenerateFromPassword([]byte(password+salt), bcrypt.DefaultCost)
+		mockUser := domain.User{
+			ID:        1,
+			Name:      "test user",
+			Email:     generateRandomEmail(),
+			Password:  string(hashed),
+			Salt:      salt,
+			CreatedAt: time.Time{},
+			UpdatedAt: time.Time{},
+		}
+		mockUserRepo := &mock.MockUserRepo{
+			MockGetByEmail: func(ctx context.Context, email string) (domain.User, error) {
+				return domain.User{}, domain.ErrRecordNotFound
+			},
+		}
+		authUsecase := usecase.NewAuthUsecase(mockUserRepo)
+		tokenString, err := authUsecase.SignIn(context.TODO(), mockUser.Email, "foo bar")
+		assert.Equal(t, domain.ErrFailedSignIn, err)
+		assert.Empty(t, tokenString)
+	})
+
+	t.Run("準正常系 パスワードが間違っている場合、ErrFailedSignInエラーとなること", func(t *testing.T) {
 		password := "test password"
 		salt := "salt"
 		hashed, _ := bcrypt.GenerateFromPassword([]byte(password+salt), bcrypt.DefaultCost)
@@ -115,7 +177,7 @@ func TestSignIn(t *testing.T) {
 		}
 		authUsecase := usecase.NewAuthUsecase(mockUserRepo)
 		tokenString, err := authUsecase.SignIn(context.TODO(), mockUser.Email, "foo bar")
-		assert.Equal(t, domain.ErrMismatchedPassword, err)
+		assert.Equal(t, domain.ErrFailedSignIn, err)
 		assert.Empty(t, tokenString)
 	})
 
