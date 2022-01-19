@@ -1,4 +1,4 @@
-package apitest_test
+package task_test
 
 import (
 	"bytes"
@@ -27,7 +27,7 @@ const taskURL = "http://localhost:8080/tasks"
 var sqlDriver interfaceDB.SqlDriver
 
 func TestMain(m *testing.M) {
-	env.NewEnv().LoadEnvFile("../.env")
+	env.NewEnv().LoadEnvFile("../../.env")
 	sqlDriver = database.NewSqlConnenction()
 	exitVal := m.Run()
 	os.Exit(exitVal)
