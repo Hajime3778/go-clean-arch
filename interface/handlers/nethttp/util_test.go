@@ -73,6 +73,11 @@ func TestGetStatusCode(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, status)
 	})
 
+	t.Run("正常系 ErrBadRequestの場合、400が返却されること", func(t *testing.T) {
+		status := nethttp.GetStatusCode(domain.ErrExistEmail)
+		assert.Equal(t, http.StatusBadRequest, status)
+	})
+
 	t.Run("正常系 ErrFailedSignInの場合、401が返却されること", func(t *testing.T) {
 		status := nethttp.GetStatusCode(domain.ErrFailedSignIn)
 		assert.Equal(t, http.StatusUnauthorized, status)

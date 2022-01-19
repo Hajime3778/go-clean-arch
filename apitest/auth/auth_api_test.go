@@ -72,8 +72,93 @@ func TestSignUp(t *testing.T) {
 		assert.Equal(t, signUpRequest.Name, user.Name)
 		assert.Equal(t, signUpRequest.Email, user.Email)
 	})
-	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {})
-	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {})
+	t.Run("準正常系 存在するメールアドレスが指定されてえいる場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		email := generateRandomEmail()
+
+		repo := userRepository.NewUserRepository(sqlDriver)
+		createUser := domain.User{
+			Name:     "test user",
+			Email:    email,
+			Password: "password",
+			Salt:     "salt",
+		}
+		repo.Create(ctx, createUser)
+
+		signUpRequest := authHandler.SignUpRequest{
+			Name:     "test user",
+			Email:    email,
+			Password: "password",
+		}
+		byteRequest, _ := json.Marshal(signUpRequest)
+		req, _ := http.NewRequest("POST", signUpURL, bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		res, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+
+		var response domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err = decoder.Decode(&response)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.Equal(t, domain.ErrorResponse{Message: domain.ErrExistEmail.Error()}, response)
+	})
+	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
+		signUpRequest := authHandler.SignUpRequest{
+			Email:    generateRandomEmail(),
+			Password: "password",
+		}
+		byteRequest, _ := json.Marshal(signUpRequest)
+		req, _ := http.NewRequest("POST", signUpURL, bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		res, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+
+		var response domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err = decoder.Decode(&response)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.NotEmpty(t, response.Message)
+	})
+	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
+		signUpRequest := domain.ErrorResponse{
+			Message: "foo",
+		}
+		byteRequest, _ := json.Marshal(signUpRequest)
+		req, _ := http.NewRequest("POST", signUpURL, bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		res, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+
+		var response domain.ErrorResponse
+		decoder := json.NewDecoder(res.Body)
+		err = decoder.Decode(&response)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		assert.NotEmpty(t, response.Message)
+	})
 }
 
 func TestSignIn(t *testing.T) {
