@@ -38,7 +38,7 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		t.GetByID(ctx, w, taskID)
+		t.getByID(ctx, w, r, taskID)
 	case http.MethodPut:
 		t.update(ctx, w, r, taskID)
 	case http.MethodDelete:
@@ -49,7 +49,7 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetByID IDでタスクを1件取得します
-func (t *taskHandler) GetByID(ctx context.Context, w http.ResponseWriter, id int64) {
+func (t *taskHandler) getByID(ctx context.Context, w http.ResponseWriter, r *http.Request, id int64) {
 	task, err := t.taskUsecase.GetByID(ctx, id)
 	if err != nil {
 		httpUtil.WriteJSONResponse(w, httpUtil.GetStatusCode(err), domain.ErrorResponse{Message: err.Error()})
