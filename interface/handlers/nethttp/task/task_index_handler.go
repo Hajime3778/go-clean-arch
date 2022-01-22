@@ -38,6 +38,13 @@ func (t *taskIndexHandler) Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *taskIndexHandler) findByUserID(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	token, userID, err := httpUtil.VerifyAccessToken(r)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+	ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
+	ctx = context.WithValue(ctx, constant.AuthTokenContextKey, token)
 	q, _ := url.Parse(r.RequestURI)
 	query := q.Query()
 

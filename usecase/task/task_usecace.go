@@ -20,8 +20,7 @@ func NewTaskUsecase(repo repository.TaskRepository) TaskUsecase {
 
 // FindByUserID タスクをユーザーIDで複数件取得します
 func (tu *taskUsecase) FindByUserID(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
-	// TODO: トークンから取得するように
-	userID := int64(1)
+	userID := ctx.Value(constant.UserIDContextKey).(int64)
 	task, err := tu.repo.FindByUserID(ctx, userID, limit, offset)
 	if err != nil {
 		return nil, err

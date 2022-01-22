@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
+	"github.com/Hajime3778/go-clean-arch/domain/constant"
 	httpUtil "github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp"
 	usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
 )
@@ -42,7 +43,7 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPut:
 		t.update(ctx, w, r, taskID)
 	case http.MethodDelete:
-		t.delete(ctx, w, taskID)
+		t.delete(ctx, w, r, taskID)
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -50,6 +51,13 @@ func (t *taskHandler) Handler(w http.ResponseWriter, r *http.Request) {
 
 // GetByID IDでタスクを1件取得します
 func (t *taskHandler) getByID(ctx context.Context, w http.ResponseWriter, r *http.Request, id int64) {
+	token, userID, err := httpUtil.VerifyAccessToken(r)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+	ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
+	ctx = context.WithValue(ctx, constant.AuthTokenContextKey, token)
 	task, err := t.taskUsecase.GetByID(ctx, id)
 	if err != nil {
 		httpUtil.WriteJSONResponse(w, httpUtil.GetStatusCode(err), domain.ErrorResponse{Message: err.Error()})
@@ -60,10 +68,18 @@ func (t *taskHandler) getByID(ctx context.Context, w http.ResponseWriter, r *htt
 
 // update IDでタスクを1件更新します
 func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http.Request, id int64) {
+	token, userID, err := httpUtil.VerifyAccessToken(r)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+	ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
+	ctx = context.WithValue(ctx, constant.AuthTokenContextKey, token)
+
 	var requestTask UpdateTaskRequest
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	err := decoder.Decode(&requestTask)
+	err = decoder.Decode(&requestTask)
 	if err != nil {
 		httpUtil.WriteJSONResponse(w, http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 		return
@@ -91,8 +107,16 @@ func (t *taskHandler) update(ctx context.Context, w http.ResponseWriter, r *http
 }
 
 // delete IDでタスクを1件削除します
-func (t *taskHandler) delete(ctx context.Context, w http.ResponseWriter, id int64) {
-	err := t.taskUsecase.Delete(ctx, id)
+func (t *taskHandler) delete(ctx context.Context, w http.ResponseWriter, r *http.Request, id int64) {
+	token, userID, err := httpUtil.VerifyAccessToken(r)
+	if err != nil {
+		httpUtil.WriteJSONResponse(w, http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
+		return
+	}
+	ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
+	ctx = context.WithValue(ctx, constant.AuthTokenContextKey, token)
+
+	err = t.taskUsecase.Delete(ctx, id)
 	if err != nil {
 		httpUtil.WriteJSONResponse(w, httpUtil.GetStatusCode(err), domain.ErrorResponse{Message: err.Error()})
 		return
