@@ -2,13 +2,11 @@ package auth
 
 import (
 	"context"
-	"crypto/rand"
-	"os"
-	"time"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
 	repository "github.com/Hajime3778/go-clean-arch/interface/database/user"
-	jwt "github.com/form3tech-oss/jwt-go"
+	"github.com/Hajime3778/go-clean-arch/util/string_util"
+	"github.com/Hajime3778/go-clean-arch/util/token"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,8 +23,8 @@ func NewAuthUsecase(repo repository.UserRepository) AuthUsecase {
 // bcryptはsaltを内包しているので、saltを付与する必要はないのですが
 // salt機能がないライブラリも多いので、自身の練習&参考用サンプルとしてsaltをつけてます。
 // https://github.com/golang/crypto/blob/e495a2d5b3d3be43468d0ebb413f46eeaedf7eb3/bcrypt/bcrypt.go#L144
-func (u *authUsecase) SignUp(ctx context.Context, user domain.User) (token string, err error) {
-	_, err = u.repo.GetByEmail(ctx, user.Email)
+func (u *authUsecase) SignUp(ctx context.Context, user domain.User) (string, error) {
+	_, err := u.repo.GetByEmail(ctx, user.Email)
 	if err == nil {
 		return "", domain.ErrExistEmail
 	}
@@ -47,7 +45,7 @@ func (u *authUsecase) SignUp(ctx context.Context, user domain.User) (token strin
 	}
 	user.ID = userID
 
-	token = GenerateAccessToken(user)
+	token := token.GenerateAccessToken(user)
 
 	return token, nil
 }
@@ -69,35 +67,11 @@ func (u *authUsecase) SignIn(ctx context.Context, email string, password string)
 	if err != nil {
 		return "", err
 	}
-	token := GenerateAccessToken(user)
+	token := token.GenerateAccessToken(user)
 	return token, err
-}
-
-// GenerateAccessToken アクセストークンを発行します
-func GenerateAccessToken(user domain.User) string {
-	claims := domain.Claims{
-		UserID:   user.ID,
-		UserName: user.Name,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
-	return tokenString
 }
 
 // generateSalt Saltを作成します(10桁のランダム文字列)
 func generateSalt() string {
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	b := make([]byte, 10)
-	rand.Read(b)
-
-	var result string
-	for _, v := range b {
-		result += string(letters[int(v)%len(letters)])
-	}
-	return result
+	return string_util.GenerateRundomString(10)
 }
