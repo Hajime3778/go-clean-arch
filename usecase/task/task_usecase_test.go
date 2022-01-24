@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Hajime3778/go-clean-arch/domain"
+	"github.com/Hajime3778/go-clean-arch/domain/constant"
 	"github.com/Hajime3778/go-clean-arch/interface/database/task/mock"
 	usecase "github.com/Hajime3778/go-clean-arch/usecase/task"
 	"github.com/stretchr/testify/assert"
@@ -14,26 +15,32 @@ import (
 
 func TestFindByUserID(t *testing.T) {
 	t.Run("正常系 指定したユーザーIDで取得", func(t *testing.T) {
-		mockTasks := createMockTasks(5, int64(1))
+		ctx := context.TODO()
+		userID := int64(1)
+		ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
+		mockTasks := createMockTasks(5, userID)
 		mockTaskRepo := &mock.MockTaskRepo{
 			MockFindByUserID: func(ctx context.Context, userID int64, limit int64, offset int64) ([]domain.Task, error) {
 				return mockTasks, nil
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
-		result, err := taskUsecase.FindByUserID(context.TODO(), int64(1), int64(1))
+		result, err := taskUsecase.FindByUserID(ctx, int64(1), int64(1))
 
 		assert.NoError(t, err)
 		assert.Equal(t, mockTasks, result)
 	})
 	t.Run("異常系 Repository実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		userID := int64(1)
+		ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
 		mockTaskRepo := &mock.MockTaskRepo{
 			MockFindByUserID: func(ctx context.Context, userID int64, limit int64, offset int64) ([]domain.Task, error) {
 				return nil, domain.ErrInternalServerError
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
-		result, err := taskUsecase.FindByUserID(context.TODO(), int64(1), int64(1))
+		result, err := taskUsecase.FindByUserID(ctx, int64(1), int64(1))
 
 		assert.Equal(t, domain.ErrInternalServerError, err)
 		assert.Nil(t, result)
@@ -42,6 +49,9 @@ func TestFindByUserID(t *testing.T) {
 
 func TestGetByID(t *testing.T) {
 	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
+		ctx := context.TODO()
+		userID := int64(1)
+		ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
 		mockTask := domain.Task{
 			ID:        1,
 			UserID:    1,
@@ -57,20 +67,23 @@ func TestGetByID(t *testing.T) {
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
-		result, err := taskUsecase.GetByID(context.TODO(), mockTask.ID)
+		result, err := taskUsecase.GetByID(ctx, mockTask.ID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, mockTask, result)
 	})
 
 	t.Run("異常系 Repository実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		userID := int64(1)
+		ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
 		mockTaskRepo := &mock.MockTaskRepo{
 			MockGetByID: func(ctx context.Context, id int64) (domain.Task, error) {
 				return domain.Task{}, domain.ErrRecordNotFound
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
-		result, err := taskUsecase.GetByID(context.TODO(), int64(1))
+		result, err := taskUsecase.GetByID(ctx, int64(1))
 
 		assert.Equal(t, domain.ErrRecordNotFound, err)
 		assert.Equal(t, domain.Task{}, result)
@@ -79,25 +92,31 @@ func TestGetByID(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	t.Run("正常系 1件追加", func(t *testing.T) {
+		ctx := context.TODO()
+		userID := int64(1)
+		ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
 		mockTaskRepo := &mock.MockTaskRepo{
 			MockCreate: func(ctx context.Context, task domain.Task) (int64, error) {
 				return 1, nil
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
-		err := taskUsecase.Create(context.TODO(), domain.Task{})
+		err := taskUsecase.Create(ctx, domain.Task{})
 
 		assert.NoError(t, err)
 	})
 
 	t.Run("異常系 Repository実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		userID := int64(1)
+		ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
 		mockTaskRepo := &mock.MockTaskRepo{
 			MockCreate: func(ctx context.Context, task domain.Task) (int64, error) {
 				return 0, domain.ErrInternalServerError
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
-		err := taskUsecase.Create(context.TODO(), domain.Task{})
+		err := taskUsecase.Create(ctx, domain.Task{})
 
 		assert.Equal(t, domain.ErrInternalServerError, err)
 	})
@@ -105,6 +124,9 @@ func TestCreate(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	t.Run("正常系 1件更新", func(t *testing.T) {
+		ctx := context.TODO()
+		userID := int64(1)
+		ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
 		mockTaskRepo := &mock.MockTaskRepo{
 			MockGetByID: func(ctx context.Context, id int64) (domain.Task, error) {
 				return domain.Task{}, nil
@@ -114,24 +136,30 @@ func TestUpdate(t *testing.T) {
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
-		err := taskUsecase.Update(context.TODO(), domain.Task{})
+		err := taskUsecase.Update(ctx, domain.Task{})
 
 		assert.NoError(t, err)
 	})
 
 	t.Run("異常系 存在しないIDが指定された場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		userID := int64(1)
+		ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
 		mockTaskRepo := &mock.MockTaskRepo{
 			MockGetByID: func(ctx context.Context, id int64) (domain.Task, error) {
 				return domain.Task{}, domain.ErrRecordNotFound
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
-		err := taskUsecase.Update(context.TODO(), domain.Task{})
+		err := taskUsecase.Update(ctx, domain.Task{})
 
 		assert.Equal(t, domain.ErrRecordNotFound, err)
 	})
 
 	t.Run("異常系 Repository実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		userID := int64(1)
+		ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
 		mockTaskRepo := &mock.MockTaskRepo{
 			MockGetByID: func(ctx context.Context, id int64) (domain.Task, error) {
 				return domain.Task{}, nil
@@ -141,7 +169,7 @@ func TestUpdate(t *testing.T) {
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
-		err := taskUsecase.Update(context.TODO(), domain.Task{})
+		err := taskUsecase.Update(ctx, domain.Task{})
 
 		assert.Equal(t, domain.ErrInternalServerError, err)
 	})
@@ -149,25 +177,31 @@ func TestUpdate(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	t.Run("正常系 1件削除", func(t *testing.T) {
+		ctx := context.TODO()
+		userID := int64(1)
+		ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
 		mockTaskRepo := &mock.MockTaskRepo{
 			MockDelete: func(ctx context.Context, id int64) error {
 				return nil
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
-		err := taskUsecase.Delete(context.TODO(), int64(1))
+		err := taskUsecase.Delete(ctx, int64(1))
 
 		assert.NoError(t, err)
 	})
 
 	t.Run("異常系 Repository実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		userID := int64(1)
+		ctx = context.WithValue(ctx, constant.UserIDContextKey, userID)
 		mockTaskRepo := &mock.MockTaskRepo{
 			MockDelete: func(ctx context.Context, id int64) error {
 				return domain.ErrInternalServerError
 			},
 		}
 		taskUsecase := usecase.NewTaskUsecase(mockTaskRepo)
-		err := taskUsecase.Delete(context.TODO(), int64(1))
+		err := taskUsecase.Delete(ctx, int64(1))
 
 		assert.Equal(t, domain.ErrInternalServerError, err)
 	})
