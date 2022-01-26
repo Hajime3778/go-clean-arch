@@ -19,6 +19,7 @@ import (
 	taskRepository "github.com/Hajime3778/go-clean-arch/interface/database/task"
 	userRepository "github.com/Hajime3778/go-clean-arch/interface/database/user"
 	taskHandler "github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp/task"
+	"github.com/Hajime3778/go-clean-arch/util/token"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +37,7 @@ func TestMain(m *testing.M) {
 func TestFindByUserID(t *testing.T) {
 	t.Run("正常系 取得結果が正しいこと", func(t *testing.T) {
 		ctx := context.TODO()
-		userID, err := createUser(ctx)
+		userID, _, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -85,7 +86,7 @@ func TestFindByUserID(t *testing.T) {
 
 	t.Run("正常系 limit, offsetを指定し、結果が正しいこと", func(t *testing.T) {
 		ctx := context.TODO()
-		userID, err := createUser(ctx)
+		userID, _, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -147,7 +148,7 @@ func TestFindByUserID(t *testing.T) {
 func TestGetByID(t *testing.T) {
 	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
 		ctx := context.TODO()
-		userID, err := createUser(ctx)
+		userID, _, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -286,7 +287,7 @@ func TestUpdate(t *testing.T) {
 		ctx := context.TODO()
 		repo := taskRepository.NewTaskRepository(sqlDriver)
 
-		userID, err := createUser(ctx)
+		userID, _, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -420,7 +421,7 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	t.Run("正常系 1件削除し結果が正しいこと", func(t *testing.T) {
 		ctx := context.TODO()
-		userID, err := createUser(ctx)
+		userID, _, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -482,8 +483,8 @@ func TestDelete(t *testing.T) {
 	})
 }
 
-// createUser テストユーザーを作成し、ユーザーIDを返却します
-func createUser(ctx context.Context) (int64, error) {
+// createUser テストユーザーを作成し、ユーザーIDとトークンを返却します
+func createUser(ctx context.Context) (int64, string, error) {
 	email := fmt.Sprintf("%d@example.com", time.Now().UnixNano())
 	userRepo := userRepository.NewUserRepository(sqlDriver)
 	user := domain.User{
@@ -492,7 +493,11 @@ func createUser(ctx context.Context) (int64, error) {
 		Password: "test passsword",
 		Salt:     "test salt",
 	}
-	return userRepo.Create(ctx, user)
+
+	userID, err := userRepo.Create(ctx, user)
+	token := token.GenerateAccessToken(user)
+
+	return userID, token, err
 }
 
 // createTasks テスト用のタスクを指定したユーザーIDで、指定された数作成します
