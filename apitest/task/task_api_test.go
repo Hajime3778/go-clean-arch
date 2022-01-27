@@ -37,34 +37,31 @@ func TestMain(m *testing.M) {
 func TestFindByUserID(t *testing.T) {
 	t.Run("正常系 取得結果が正しいこと", func(t *testing.T) {
 		ctx := context.TODO()
-		userID, _, err := createUser(ctx)
+		user, token, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdTasks, err := createTasks(5, userID)
+		createdTasks, err := createTasks(5, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		// TODO: HTTPリクエストで取得できるようにする
-		// query := fmt.Sprintf("?limit=%d&offset=%d", 5, 0)
-		// req, _ := http.NewRequest("GET", taskURL+query, nil)
-		// client := new(http.Client)
-		// response, err := client.Do(req)
-		// if err != nil {
-		// 	t.Fatal(err)
-		// }
-		// defer response.Body.Close()
 
-		// var tasks []domain.Task
-		// decoder := json.NewDecoder(response.Body)
-		// err = decoder.Decode(&tasks)
-		// if err != nil {
-		// 	t.Fatal(err)
-		// }
+		query := fmt.Sprintf("?limit=%d&offset=%d", 5, 0)
+		req, _ := http.NewRequest("GET", taskURL+query, nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
 
-		// TODO: 後で消す。ユーザー認証機能がないため、リポジトリ実行で検証してます
-		taskRepo := taskRepository.NewTaskRepository(sqlDriver)
-		tasks, err := taskRepo.FindByUserID(ctx, userID, 5, 0)
+		assert.Equal(t, http.StatusOK, response.StatusCode)
+
+		var tasks []domain.Task
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&tasks)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -86,33 +83,30 @@ func TestFindByUserID(t *testing.T) {
 
 	t.Run("正常系 limit, offsetを指定し、結果が正しいこと", func(t *testing.T) {
 		ctx := context.TODO()
-		userID, _, err := createUser(ctx)
+		user, token, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdTasks, err := createTasks(5, userID)
+		createdTasks, err := createTasks(5, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		// query := fmt.Sprintf("?limit=%d&offset=%d", 2, 1)
-		// req, _ := http.NewRequest("GET", taskURL+query, nil)
-		// client := new(http.Client)
-		// response, err := client.Do(req)
-		// if err != nil {
-		// 	t.Fatal(err)
-		// }
-		// defer response.Body.Close()
+		query := fmt.Sprintf("?limit=%d&offset=%d", 2, 1)
+		req, _ := http.NewRequest("GET", taskURL+query, nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
 
-		// var tasks []domain.Task
-		// decoder := json.NewDecoder(response.Body)
-		// err = decoder.Decode(&tasks)
-		// if err != nil {
-		// 	t.Fatal(err)
-		// }
+		assert.Equal(t, http.StatusOK, response.StatusCode)
 
-		// TODO: 後で消す。ユーザー認証機能がないため、リポジトリ実行で検証してます
-		taskRepo := taskRepository.NewTaskRepository(sqlDriver)
-		tasks, err := taskRepo.FindByUserID(ctx, userID, 2, 1)
+		var tasks []domain.Task
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&tasks)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -138,21 +132,155 @@ func TestFindByUserID(t *testing.T) {
 		}
 	})
 
-	t.Run("正常系 存在しない場合、0件取得しステータス200であること", func(t *testing.T) {})
+	t.Run("正常系 存在しない場合、0件取得しステータス200であること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	t.Run("準正常系 パラメータが指定されてない場合、400エラーとなること", func(t *testing.T) {})
+		query := fmt.Sprintf("?limit=%d&offset=%d", 5, 0)
+		req, _ := http.NewRequest("GET", taskURL+query, nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
 
-	t.Run("準正常系 パラメータの型が間違っている場合、400エラーとなること", func(t *testing.T) {})
+		var tasks []domain.Task
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&tasks)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusOK, response.StatusCode)
+		assert.Equal(t, 0, len(tasks))
+	})
+
+	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, _, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		query := fmt.Sprintf("?limit=%d&offset=%d", 5, 0)
+		req, _ := http.NewRequest("GET", taskURL+query, nil)
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
+	})
+
+	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, _, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		query := fmt.Sprintf("?limit=%d&offset=%d", 5, 0)
+		req, _ := http.NewRequest("GET", taskURL+query, nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "invalid token")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
+	})
+
+	t.Run("準正常系 パラメータが指定されてない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		req, _ := http.NewRequest("GET", taskURL, nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
+	})
+
+	t.Run("準正常系 パラメータの型が間違っている場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		query := fmt.Sprint("?limit=foo&offset=bar")
+		req, _ := http.NewRequest("GET", taskURL+query, nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
+	})
 }
 
 func TestGetByID(t *testing.T) {
 	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
 		ctx := context.TODO()
-		userID, _, err := createUser(ctx)
+		user, _, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdTasks, err := createTasks(1, userID)
+		createdTasks, err := createTasks(1, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -287,11 +415,11 @@ func TestUpdate(t *testing.T) {
 		ctx := context.TODO()
 		repo := taskRepository.NewTaskRepository(sqlDriver)
 
-		userID, _, err := createUser(ctx)
+		user, _, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdTask, err := createTasks(1, userID)
+		createdTask, err := createTasks(1, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -421,11 +549,11 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	t.Run("正常系 1件削除し結果が正しいこと", func(t *testing.T) {
 		ctx := context.TODO()
-		userID, _, err := createUser(ctx)
+		user, _, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdTasks, err := createTasks(1, userID)
+		createdTasks, err := createTasks(1, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -483,8 +611,8 @@ func TestDelete(t *testing.T) {
 	})
 }
 
-// createUser テストユーザーを作成し、ユーザーIDとトークンを返却します
-func createUser(ctx context.Context) (int64, string, error) {
+// createUser テストユーザーを作成し、ユーザーとトークンを返却します
+func createUser(ctx context.Context) (domain.User, string, error) {
 	email := fmt.Sprintf("%d@example.com", time.Now().UnixNano())
 	userRepo := userRepository.NewUserRepository(sqlDriver)
 	user := domain.User{
@@ -495,9 +623,11 @@ func createUser(ctx context.Context) (int64, string, error) {
 	}
 
 	userID, err := userRepo.Create(ctx, user)
+	user.ID = userID
+
 	token := token.GenerateAccessToken(user)
 
-	return userID, token, err
+	return user, token, err
 }
 
 // createTasks テスト用のタスクを指定したユーザーIDで、指定された数作成します
