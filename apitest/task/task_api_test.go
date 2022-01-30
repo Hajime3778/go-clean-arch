@@ -276,7 +276,7 @@ func TestFindByUserID(t *testing.T) {
 func TestGetByID(t *testing.T) {
 	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
 		ctx := context.TODO()
-		user, _, err := createUser(ctx)
+		user, token, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -287,6 +287,8 @@ func TestGetByID(t *testing.T) {
 		createdTask := createdTasks[0]
 
 		req, _ := http.NewRequest("GET", taskURL+"/"+strconv.Itoa(int(createdTask.ID)), nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -300,14 +302,24 @@ func TestGetByID(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		assert.Equal(t, http.StatusOK, response.StatusCode)
 		assert.Equal(t, createdTask.ID, resTask.ID)
 		assert.Equal(t, createdTask.Title, resTask.Title)
 		assert.Equal(t, createdTask.Content, resTask.Content)
 	})
 
 	t.Run("準正常系 存在しないIDで検索した際に404エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		taskID := int(time.Now().UnixNano())
 		req, _ := http.NewRequest("GET", taskURL+"/"+strconv.Itoa(taskID), nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -325,12 +337,82 @@ func TestGetByID(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		assert.Equal(t, http.StatusNotFound, response.StatusCode)
 		assert.Equal(t, resError.Message, domain.ErrRecordNotFound.Error())
 	})
 
+	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, _, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req, _ := http.NewRequest("GET", taskURL+"/1", nil)
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		if response.StatusCode == http.StatusOK {
+			t.Fatal("成功レスポンスのためテスト失敗")
+		}
+
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
+	})
+
+	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, _, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req, _ := http.NewRequest("GET", taskURL+"/1", nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "invalid token")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		if response.StatusCode == http.StatusOK {
+			t.Fatal("成功レスポンスのためテスト失敗")
+		}
+
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
+
+	})
+
 	t.Run("準正常系 指定されたIDが数字でない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
 		req, _ := http.NewRequest("GET", taskURL+"/hoge", nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
