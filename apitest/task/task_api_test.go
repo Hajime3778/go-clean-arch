@@ -41,7 +41,7 @@ func TestFindByUserID(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdTasks, err := createTasks(5, user.ID)
+		createdTasks, err := createTasks(ctx, 5, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -87,7 +87,7 @@ func TestFindByUserID(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdTasks, err := createTasks(5, user.ID)
+		createdTasks, err := createTasks(ctx, 5, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -270,7 +270,7 @@ func TestGetByID(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdTasks, err := createTasks(1, user.ID)
+		createdTasks, err := createTasks(ctx, 1, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -582,7 +582,7 @@ func TestUpdate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdTask, err := createTasks(1, user.ID)
+		createdTask, err := createTasks(ctx, 1, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -674,6 +674,10 @@ func TestUpdate(t *testing.T) {
 		assert.NotEmpty(t, resError.Message)
 	})
 
+	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {})
+
+	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {})
+
 	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
 		updateRequest := taskHandler.UpdateTaskRequest{
 			Title: "test title",
@@ -716,7 +720,7 @@ func TestDelete(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdTasks, err := createTasks(1, user.ID)
+		createdTasks, err := createTasks(ctx, 1, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -752,6 +756,10 @@ func TestDelete(t *testing.T) {
 
 		assert.Equal(t, http.StatusNoContent, response.StatusCode)
 	})
+
+	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {})
+
+	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {})
 
 	t.Run("準正常系 指定されたIDが数字でない場合、400エラーとなること", func(t *testing.T) {
 		req, _ := http.NewRequest("DELETE", taskURL+"/hoge", nil)
@@ -794,7 +802,7 @@ func createUser(ctx context.Context) (domain.User, string, error) {
 }
 
 // createTasks テスト用のタスクを指定したユーザーIDで、指定された数作成します
-func createTasks(num int, userID int64) ([]domain.Task, error) {
+func createTasks(ctx context.Context, num int, userID int64) ([]domain.Task, error) {
 	repo := taskRepository.NewTaskRepository(sqlDriver)
 
 	tasks := make([]domain.Task, 0)
@@ -806,7 +814,7 @@ func createTasks(num int, userID int64) ([]domain.Task, error) {
 			Content: "test content" + strconv.Itoa(i+1),
 			DueDate: dueDate.Round(time.Second),
 		}
-		createdID, err := repo.Create(context.TODO(), task)
+		createdID, err := repo.Create(ctx, task)
 		if err != nil {
 			return nil, err
 		}
