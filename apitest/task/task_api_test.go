@@ -162,11 +162,6 @@ func TestFindByUserID(t *testing.T) {
 	})
 
 	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {
-		ctx := context.TODO()
-		_, _, err := createUser(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
 		query := fmt.Sprintf("?limit=%d&offset=%d", 5, 0)
 		req, _ := http.NewRequest("GET", taskURL+query, nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -189,11 +184,6 @@ func TestFindByUserID(t *testing.T) {
 	})
 
 	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {
-		ctx := context.TODO()
-		_, _, err := createUser(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
 		query := fmt.Sprintf("?limit=%d&offset=%d", 5, 0)
 		req, _ := http.NewRequest("GET", taskURL+query, nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -343,11 +333,6 @@ func TestGetByID(t *testing.T) {
 	})
 
 	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {
-		ctx := context.TODO()
-		_, _, err := createUser(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
 		req, _ := http.NewRequest("GET", taskURL+"/1", nil)
 		req.Header.Set("Content-Type", "application/json")
 		client := new(http.Client)
@@ -373,11 +358,6 @@ func TestGetByID(t *testing.T) {
 	})
 
 	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {
-		ctx := context.TODO()
-		_, _, err := createUser(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
 		req, _ := http.NewRequest("GET", taskURL+"/1", nil)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "invalid token")
@@ -437,10 +417,49 @@ func TestGetByID(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	t.Run("正常系 1件作成し登録結果が正しいこと", func(t *testing.T) {
+		ctx := context.TODO()
+		user, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
 		createRequest := taskHandler.CreateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
-			DueDate: time.Now(),
+			DueDate: time.Now().Round(time.Second),
+		}
+		byteRequest, _ := json.Marshal(createRequest)
+		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		repo := taskRepository.NewTaskRepository(sqlDriver)
+		tasks, err := repo.FindByUserID(ctx, user.ID, 1, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		task := tasks[0]
+
+		s := createRequest.DueDate.String()
+		d := task.DueDate.String()
+
+		fmt.Println(s + d)
+		assert.Equal(t, http.StatusCreated, response.StatusCode)
+		assert.Equal(t, createRequest.Title, task.Title)
+		assert.Equal(t, createRequest.Content, task.Content)
+		assert.True(t, createRequest.DueDate.Equal(task.DueDate))
+	})
+
+	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {
+		createRequest := taskHandler.CreateTaskRequest{
+			Title:   "test title",
+			Content: "test content",
+			DueDate: time.Now().Round(time.Second),
 		}
 		byteRequest, _ := json.Marshal(createRequest)
 		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteRequest))
@@ -452,18 +471,58 @@ func TestCreate(t *testing.T) {
 		}
 		defer response.Body.Close()
 
-		assert.Equal(t, http.StatusCreated, response.StatusCode)
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		// TODO: 値の検証はユーザー機能が完成してから実装する
+		assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
+	})
+
+	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {
+		createRequest := taskHandler.CreateTaskRequest{
+			Title:   "test title",
+			Content: "test content",
+			DueDate: time.Now().Round(time.Second),
+		}
+		byteRequest, _ := json.Marshal(createRequest)
+		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "invalid token")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
 
 	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
 		createRequest := taskHandler.CreateTaskRequest{
 			Title: "test title",
 		}
 		byteRequest, _ := json.Marshal(createRequest)
 		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteRequest))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -471,16 +530,30 @@ func TestCreate(t *testing.T) {
 		}
 		defer response.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
 
 	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
 		createRequest := domain.ErrorResponse{
 			Message: "test",
 		}
 		byteRequest, _ := json.Marshal(createRequest)
 		req, _ := http.NewRequest("POST", taskURL, bytes.NewBuffer(byteRequest))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -488,7 +561,15 @@ func TestCreate(t *testing.T) {
 		}
 		defer response.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
 }
 
