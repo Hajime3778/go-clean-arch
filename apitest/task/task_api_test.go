@@ -576,16 +576,16 @@ func TestCreate(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	t.Run("正常系 1件更新し結果が正しいこと", func(t *testing.T) {
 		ctx := context.TODO()
-		repo := taskRepository.NewTaskRepository(sqlDriver)
-
-		user, _, err := createUser(ctx)
+		user, token, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		createdTask, err := createTasks(ctx, 1, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		updateRequest := taskHandler.UpdateTaskRequest{
 			Title:   "updated title",
 			Content: "updated content",
@@ -595,6 +595,7 @@ func TestUpdate(t *testing.T) {
 
 		req, _ := http.NewRequest("PUT", taskURL+"/"+strconv.Itoa(int(createdTask[0].ID)), bytes.NewBuffer(byteRequest))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -602,6 +603,7 @@ func TestUpdate(t *testing.T) {
 		}
 		defer response.Body.Close()
 
+		repo := taskRepository.NewTaskRepository(sqlDriver)
 		updatedTask, err := repo.GetByID(ctx, createdTask[0].ID)
 		if err != nil {
 			t.Fatal(err)
@@ -614,15 +616,22 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("準正常系 存在しないIDを指定した際に404エラーとなること", func(t *testing.T) {
-		taskID := int(time.Now().UnixNano())
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		updateRequest := taskHandler.UpdateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
 			DueDate: time.Now().Round(time.Second),
 		}
+		taskID := int(time.Now().UnixNano())
 		byteRequest, _ := json.Marshal(updateRequest)
 		req, _ := http.NewRequest("PUT", taskURL+"/"+strconv.Itoa(taskID), bytes.NewBuffer(byteRequest))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -645,6 +654,12 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("準正常系 指定されたIDが数字でない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		updateRequest := taskHandler.UpdateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
@@ -653,6 +668,7 @@ func TestUpdate(t *testing.T) {
 		byteRequest, _ := json.Marshal(updateRequest)
 		req, _ := http.NewRequest("PUT", taskURL+"/hoge", bytes.NewBuffer(byteRequest))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -674,17 +690,75 @@ func TestUpdate(t *testing.T) {
 		assert.NotEmpty(t, resError.Message)
 	})
 
-	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {})
+	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {
+		updateRequest := taskHandler.UpdateTaskRequest{
+			Title:   "test title",
+			Content: "test content",
+			DueDate: time.Now().Round(time.Second),
+		}
+		byteRequest, _ := json.Marshal(updateRequest)
+		req, _ := http.NewRequest("PUT", taskURL+"/1", bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "invalid token")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
 
-	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {})
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
+	})
+
+	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {
+		updateRequest := taskHandler.UpdateTaskRequest{
+			Title:   "test title",
+			Content: "test content",
+			DueDate: time.Now().Round(time.Second),
+		}
+		byteRequest, _ := json.Marshal(updateRequest)
+		req, _ := http.NewRequest("PUT", taskURL+"/1", bytes.NewBuffer(byteRequest))
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
+	})
 
 	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		updateRequest := taskHandler.UpdateTaskRequest{
 			Title: "test title",
 		}
 		byteRequest, _ := json.Marshal(updateRequest)
 		req, _ := http.NewRequest("PUT", taskURL+"/123", bytes.NewBuffer(byteRequest))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -696,12 +770,19 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		updateRequest := domain.ErrorResponse{
 			Message: "test",
 		}
 		byteRequest, _ := json.Marshal(updateRequest)
 		req, _ := http.NewRequest("PUT", taskURL+"/123", bytes.NewBuffer(byteRequest))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
