@@ -848,11 +848,46 @@ func TestDelete(t *testing.T) {
 	})
 
 	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {
+		req, _ := http.NewRequest("DELETE", taskURL+"/1", nil)
+		req.Header.Set("Content-Type", "application/json")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
 
 	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {
+		req, _ := http.NewRequest("DELETE", taskURL+"/1", nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "invalid token")
+		client := new(http.Client)
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
 
+		var resError domain.ErrorResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&resError)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
+		assert.NotEmpty(t, resError.Message)
 	})
 
 	t.Run("準正常系 指定されたIDが数字でない場合、400エラーとなること", func(t *testing.T) {
