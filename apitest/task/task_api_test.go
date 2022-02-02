@@ -797,7 +797,7 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	t.Run("正常系 1件削除し結果が正しいこと", func(t *testing.T) {
 		ctx := context.TODO()
-		user, _, err := createUser(ctx)
+		user, token, err := createUser(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -808,6 +808,8 @@ func TestDelete(t *testing.T) {
 		createdTask := createdTasks[0]
 
 		req, _ := http.NewRequest("DELETE", taskURL+"/"+strconv.Itoa(int(createdTask.ID)), nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -825,9 +827,16 @@ func TestDelete(t *testing.T) {
 	})
 
 	t.Run("正常系 存在しないIDを指定した際にエラーとならないこと(204が返却されること)", func(t *testing.T) {
-		taskID := time.Now().UnixNano()
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
 
+		taskID := time.Now().UnixNano()
 		req, _ := http.NewRequest("DELETE", taskURL+"/"+strconv.Itoa(int(taskID)), nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
@@ -838,12 +847,24 @@ func TestDelete(t *testing.T) {
 		assert.Equal(t, http.StatusNoContent, response.StatusCode)
 	})
 
-	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {})
+	t.Run("準正常系 トークンが指定されてない場合、401エラーとなること", func(t *testing.T) {
 
-	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {})
+	})
+
+	t.Run("準正常系 トークンが間違っている場合、401エラーとなること", func(t *testing.T) {
+
+	})
 
 	t.Run("準正常系 指定されたIDが数字でない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		_, token, err := createUser(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		req, _ := http.NewRequest("DELETE", taskURL+"/hoge", nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", token)
 		client := new(http.Client)
 		response, err := client.Do(req)
 		if err != nil {
