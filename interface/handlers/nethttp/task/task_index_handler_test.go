@@ -169,6 +169,9 @@ func TestFindByIDTest(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	t.Run("正常系 1件追加", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
+
 		reqTask := task.CreateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
@@ -178,6 +181,9 @@ func TestCreate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "http://example.com/tasks",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
+
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockCreate: func(ctx context.Context, task domain.Task) error {
@@ -193,6 +199,8 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		reqTask := task.CreateTaskRequest{
 			Title:   "test title",
 			DueDate: time.Now(),
@@ -201,6 +209,8 @@ func TestCreate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "http://example.com/tasks",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockCreate: func(ctx context.Context, task domain.Task) error {
@@ -224,6 +234,8 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		req := domain.ErrorResponse{
 			Message: "test",
 		}
@@ -231,6 +243,8 @@ func TestCreate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "http://example.com/tasks",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockCreate: func(ctx context.Context, task domain.Task) error {
@@ -254,6 +268,8 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		reqTask := task.CreateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
@@ -263,6 +279,8 @@ func TestCreate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "http://example.com/tasks",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockCreate: func(ctx context.Context, task domain.Task) error {
