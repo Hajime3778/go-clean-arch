@@ -161,6 +161,8 @@ func TestGetByID(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	t.Run("正常系 1件更新", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		reqTask := task.UpdateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
@@ -170,6 +172,8 @@ func TestUpdate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockUpdate: func(ctx context.Context, task domain.Task) error {
@@ -185,6 +189,8 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		reqTask := task.UpdateTaskRequest{
 			Title:   "test title",
 			DueDate: time.Now(),
@@ -193,6 +199,8 @@ func TestUpdate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockUpdate: func(ctx context.Context, task domain.Task) error {
@@ -216,6 +224,8 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		req := domain.ErrorResponse{
 			Message: "test",
 		}
@@ -223,6 +233,8 @@ func TestUpdate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockUpdate: func(ctx context.Context, task domain.Task) error {
@@ -246,6 +258,8 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		reqTask := task.UpdateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
@@ -255,6 +269,8 @@ func TestUpdate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		mockErr := errors.New("test error")
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
