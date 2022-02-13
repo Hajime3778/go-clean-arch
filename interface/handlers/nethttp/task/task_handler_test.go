@@ -297,7 +297,11 @@ func TestUpdate(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	t.Run("正常系 1件削除", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodDelete, "http://example.com/tasks/5", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockDelete: func(ctx context.Context, id int64) error {
@@ -313,7 +317,11 @@ func TestDelete(t *testing.T) {
 	})
 
 	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodDelete, "http://example.com/tasks/5", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockErr := errors.New("test error")
 		mockUsecase := &mock.MockTaskUsecase{
