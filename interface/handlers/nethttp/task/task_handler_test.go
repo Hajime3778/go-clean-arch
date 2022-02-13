@@ -57,7 +57,11 @@ func TestTaskHandlerTest(t *testing.T) {
 
 func TestGetByID(t *testing.T) {
 	t.Run("正常系 存在するIDで1件取得", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks/5", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockTask := domain.Task{
 			ID:        1,
@@ -98,7 +102,11 @@ func TestGetByID(t *testing.T) {
 	})
 
 	t.Run("準正常系 Usecase実行時にデータが存在しないエラーが発生した場合、404エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks/5", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockGetByID: func(ctx context.Context, id int64) (domain.Task, error) {
@@ -122,7 +130,11 @@ func TestGetByID(t *testing.T) {
 	})
 
 	t.Run("異常系 Usecase実行時に想定外のエラーが発生した場合、500エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks/5", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockErr := errors.New("test error")
 		mockUsecase := &mock.MockTaskUsecase{
@@ -149,6 +161,8 @@ func TestGetByID(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	t.Run("正常系 1件更新", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		reqTask := task.UpdateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
@@ -158,6 +172,8 @@ func TestUpdate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockUpdate: func(ctx context.Context, task domain.Task) error {
@@ -173,6 +189,8 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		reqTask := task.UpdateTaskRequest{
 			Title:   "test title",
 			DueDate: time.Now(),
@@ -181,6 +199,8 @@ func TestUpdate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockUpdate: func(ctx context.Context, task domain.Task) error {
@@ -204,6 +224,8 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		req := domain.ErrorResponse{
 			Message: "test",
 		}
@@ -211,6 +233,8 @@ func TestUpdate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockUpdate: func(ctx context.Context, task domain.Task) error {
@@ -234,6 +258,8 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		reqTask := task.UpdateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
@@ -243,6 +269,8 @@ func TestUpdate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPut, "http://example.com/tasks/5",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		mockErr := errors.New("test error")
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
@@ -269,7 +297,11 @@ func TestUpdate(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	t.Run("正常系 1件削除", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodDelete, "http://example.com/tasks/5", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockDelete: func(ctx context.Context, id int64) error {
@@ -285,7 +317,11 @@ func TestDelete(t *testing.T) {
 	})
 
 	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodDelete, "http://example.com/tasks/5", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockErr := errors.New("test error")
 		mockUsecase := &mock.MockTaskUsecase{

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	"github.com/Hajime3778/go-clean-arch/domain"
 	"github.com/Hajime3778/go-clean-arch/interface/handlers/nethttp/task"
 	"github.com/Hajime3778/go-clean-arch/usecase/task/mock"
+	"github.com/Hajime3778/go-clean-arch/util/token"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,7 +34,11 @@ func TestTaskIndexHandlerTest(t *testing.T) {
 
 func TestFindByIDTest(t *testing.T) {
 	t.Run("正常系 複数取得", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks?limit=10&offset=0", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockFindByUserID: func(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
@@ -48,7 +54,11 @@ func TestFindByIDTest(t *testing.T) {
 	})
 
 	t.Run("準正常系 パラメータが指定されていない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockFindByUserID: func(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
@@ -72,7 +82,11 @@ func TestFindByIDTest(t *testing.T) {
 	})
 
 	t.Run("準正常系 limitが数字でない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks?limit=foo&offset=0", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockFindByUserID: func(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
@@ -96,7 +110,11 @@ func TestFindByIDTest(t *testing.T) {
 	})
 
 	t.Run("準正常系 offsetが数字でない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks?limit=0&offset=foo", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockFindByUserID: func(ctx context.Context, limit int64, offset int64) ([]domain.Task, error) {
@@ -120,7 +138,11 @@ func TestFindByIDTest(t *testing.T) {
 	})
 
 	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		r := httptest.NewRequest(http.MethodGet, "http://example.com/tasks?limit=0&offset=0", nil)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockErr := errors.New("test error")
 		mockUsecase := &mock.MockTaskUsecase{
@@ -147,6 +169,9 @@ func TestFindByIDTest(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	t.Run("正常系 1件追加", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
+
 		reqTask := task.CreateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
@@ -156,6 +181,9 @@ func TestCreate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "http://example.com/tasks",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
+
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockCreate: func(ctx context.Context, task domain.Task) error {
@@ -171,6 +199,8 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("準正常系 リクエストパラメータが足りていない場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		reqTask := task.CreateTaskRequest{
 			Title:   "test title",
 			DueDate: time.Now(),
@@ -179,6 +209,8 @@ func TestCreate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "http://example.com/tasks",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockCreate: func(ctx context.Context, task domain.Task) error {
@@ -202,6 +234,8 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("準正常系 リクエスト形式が間違っている場合、400エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		req := domain.ErrorResponse{
 			Message: "test",
 		}
@@ -209,6 +243,8 @@ func TestCreate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "http://example.com/tasks",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockCreate: func(ctx context.Context, task domain.Task) error {
@@ -232,6 +268,8 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("異常系 Usecase実行時にエラーが発生した場合、エラーとなること", func(t *testing.T) {
+		ctx := context.TODO()
+		token := generateToken(ctx)
 		reqTask := task.CreateTaskRequest{
 			Title:   "test title",
 			Content: "test content",
@@ -241,6 +279,8 @@ func TestCreate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "http://example.com/tasks",
 			bytes.NewBuffer(byteTask),
 		)
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Authorization", token)
 		w := httptest.NewRecorder()
 		mockUsecase := &mock.MockTaskUsecase{
 			MockCreate: func(ctx context.Context, task domain.Task) error {
@@ -262,4 +302,16 @@ func TestCreate(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 		assert.NotEmpty(t, resError.Message)
 	})
+}
+
+func generateToken(ctx context.Context) string {
+	email := fmt.Sprintf("%d@example.com", time.Now().UnixNano())
+	user := domain.User{
+		Name:     "test user",
+		Email:    email,
+		Password: "test passsword",
+		Salt:     "test salt",
+	}
+
+	return token.GenerateAccessToken(user)
 }

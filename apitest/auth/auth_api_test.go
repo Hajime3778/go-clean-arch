@@ -73,7 +73,7 @@ func TestSignUp(t *testing.T) {
 		assert.Equal(t, signUpRequest.Name, user.Name)
 		assert.Equal(t, signUpRequest.Email, user.Email)
 	})
-	t.Run("準正常系 存在するメールアドレスが指定されてえいる場合、400エラーとなること", func(t *testing.T) {
+	t.Run("準正常系 存在するメールアドレスが指定されている場合、400エラーとなること", func(t *testing.T) {
 		ctx := context.TODO()
 		email := generateRandomEmail()
 
