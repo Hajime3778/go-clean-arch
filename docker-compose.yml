@@ -1,7 +1,17 @@
 version: '3'
 
 services:
-  mysql: # Mysql container
+  api:
+    build:
+      context: .
+      dockerfile: ./docker/go-clean-arch/Dockerfile
+    container_name: go_clean_arch_api
+    ports:
+      - 8080:8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+  mysql:
     container_name: mysql
     platform: linux/x86_64 # M1チップ対応 (intel版の方はコメントアウトして実行してください)
     image: mysql:5.7
@@ -17,3 +27,7 @@ services:
       TZ: Asia/Tokyo
     ports:
       - 3306:3306
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10

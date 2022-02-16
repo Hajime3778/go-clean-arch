@@ -11,6 +11,7 @@ import (
 const (
 	PRODUCTION = "PRODUCTION"
 	STAGING    = "STAGING"
+	DEVELOP    = "DEVELOP"
 )
 
 type Env struct{}
@@ -23,7 +24,7 @@ func NewEnv() env.Env {
 func (e *Env) Init() {
 	// 本番環境 or 検証環境
 	env := os.Getenv("ENVIRONMENT")
-	if env == PRODUCTION || env == STAGING {
+	if env == PRODUCTION || env == STAGING || env == DEVELOP {
 		return
 	}
 
