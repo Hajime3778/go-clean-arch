@@ -11,7 +11,7 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-  mysql: # Mysql container
+  mysql:
     container_name: mysql
     platform: linux/x86_64 # M1チップ対応 (intel版の方はコメントアウトして実行してください)
     image: mysql:5.7
